@@ -1,7 +1,6 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import cron from "node-cron";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -68,7 +67,13 @@ export function createApp() {
     app.get("*", (_req, res) => res.sendFile(join(dashboardDist, "index.html")));
   }
 
-  cron.schedule("0 2 * * *", cleanupOldAnalytics);
+  const dayMs = 24 * 60 * 60 * 1000;
+  windowlessDailyCleanup(cleanupOldAnalytics, dayMs);
 
   return app;
+}
+
+function windowlessDailyCleanup(job: () => void, intervalMs: number) {
+  const timer = setInterval(job, intervalMs);
+  timer.unref?.();
 }

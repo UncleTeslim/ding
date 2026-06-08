@@ -18,14 +18,24 @@ npm install
 npm run setup
 ```
 
+The setup script is interactive. Type values into the prompts, not shell commands.
+
+Example:
+
+```txt
+Admin username [admin]: admin
+Admin password: your-password
+Public base URL [http://localhost:3000]: https://ding.example.com
+```
+
 Review the generated `.env` file:
 
 ```txt
-DING_ADMIN_USERNAME=admin
-DING_ADMIN_PASSWORD_HASH=...
-DING_JWT_SECRET=...
-DING_IP_SALT=...
-DING_BASE_URL=https://ding.example.com
+DING_ADMIN_USERNAME='admin'
+DING_ADMIN_PASSWORD_HASH='...'
+DING_JWT_SECRET='...'
+DING_IP_SALT='...'
+DING_BASE_URL='https://ding.example.com'
 DING_DB_PATH=/app/data/ding.db
 DING_TRUST_PROXY=true
 PORT=3000
@@ -33,6 +43,8 @@ NODE_ENV=production
 ```
 
 Use a real HTTPS URL for `DING_BASE_URL`.
+
+Do not run `cp .env.example .env` for production. `.env.example` is for local development only.
 
 ## 2. Run with Docker Compose
 

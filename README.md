@@ -17,7 +17,49 @@ It is built for teams that want the usefulness of Beamer or Headway, but prefer 
 - Docker-based deployment
 - No third-party scripts, fonts, cookies, or external analytics in the widget
 
-## Quick Start
+## Choose Your Setup
+
+Use **Docker quick start** if you want to run Ding like a self-hosted product.
+
+Use **local development** if you want to work on the codebase.
+
+Do not run `cp .env.example .env` and `npm run setup` together. They are for different paths.
+
+## Docker Quick Start
+
+Prerequisite: Docker Desktop must be running before you start.
+
+```bash
+npm install
+npm run setup
+docker compose up --build
+```
+
+The setup script creates a `.env` file for Docker. It will ask three questions:
+
+```txt
+Admin username [admin]: admin
+Admin password: your-password
+Public base URL [http://localhost:3000]: http://localhost:3000
+```
+
+When the container is running, open:
+
+```txt
+http://localhost:3000
+```
+
+Log in with the username and password you entered during setup.
+
+To see the widget inside a sample host page, open:
+
+```txt
+http://localhost:3000/demo/
+```
+
+## Local Development
+
+Use this path when you want to edit Ding itself.
 
 ```bash
 cp .env.example .env
@@ -26,32 +68,23 @@ npm run build
 npm run dev
 ```
 
-Open the admin dashboard:
-
-```txt
-http://localhost:3000
-```
-
-Open the local widget demo:
-
-```txt
-http://localhost:3000/demo/
-```
-
-The development credentials in `.env.example` are:
+Development credentials from `.env.example`:
 
 ```txt
 Username: admin
 Password: password
 ```
 
-For production, run:
+Useful development commands:
 
 ```bash
-npm run setup
+npm run build
+npm test
+npm run check:size
+npm audit
 ```
 
-This creates a `.env` file with a bcrypt password hash, JWT secret, and IP hashing salt.
+The widget bundle must remain under 25KB gzipped.
 
 ## Embed Code
 
@@ -106,15 +139,47 @@ For local testing, use:
 
 In production, Ding refuses weak development secrets for `DING_JWT_SECRET` and `DING_IP_SALT`.
 
-## Docker
+## Common First-Run Issues
+
+### Docker says the Linux engine pipe cannot be found
+
+Start Docker Desktop and wait until it reports that the engine is running. Then run:
 
 ```bash
-cp .env.example .env
-npm run setup
 docker compose up --build
 ```
 
-The container listens on port `3000` and stores SQLite data in the `ding-data` volume.
+### Docker warns that a random variable is not set
+
+Regenerate `.env` with the current setup script:
+
+```bash
+rm .env
+npm run setup
+```
+
+On PowerShell:
+
+```powershell
+Remove-Item .env
+npm run setup
+```
+
+### The setup prompt looks stuck
+
+It is waiting for answers. Type the value only, not a shell command.
+
+Good:
+
+```txt
+Admin username [admin]: admin
+```
+
+Wrong:
+
+```txt
+Admin username [admin]: cp .env.example .env
+```
 
 ## Architecture
 
@@ -139,17 +204,6 @@ The server serves the dashboard, the public widget script, the public API, and p
 Read [SECURITY.md](SECURITY.md) for security guidance and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production setup.
 
 Read [docs/ROADMAP.md](docs/ROADMAP.md) for the next product milestones.
-
-## Development
-
-```bash
-npm run dev
-npm run build
-npm test
-npm run check:size
-```
-
-The widget bundle must remain under 25KB gzipped. The current build is far below that limit.
 
 ## License
 
