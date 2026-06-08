@@ -1,0 +1,25 @@
+{
+  "name": "ding",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open source self-hosted changelog widget for your web app.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/server",
+    "packages/widget",
+    "packages/dashboard"
+  ],
+  "scripts": {
+    "build": "npm run build -w @ding/widget && npm run build -w @ding/dashboard && npm run build -w @ding/server",
+    "dev": "concurrently -n server,dashboard,widget -c blue,green,magenta \"npm run dev -w @ding/server\" \"npm run dev -w @ding/dashboard\" \"npm run dev -w @ding/widget\"",
+    "test": "npm run test -w @ding/server && npm run test -w @ding/widget",
+    "check:size": "npm run check:size -w @ding/widget",
+    "setup": "node scripts/setup.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "gzip-size-cli": "^5.1.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
