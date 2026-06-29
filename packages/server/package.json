@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-migrations.mjs",
     "dev": "tsx watch src/index.ts",
-    "test": "vitest run src"
+    "test": "vitest run"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -17,6 +17,7 @@
     "express": "^4.19.2",
     "express-rate-limit": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
+    "node-cron": "^3.0.3",
     "pino": "^9.1.0",
     "zod": "^3.23.8"
   },
@@ -28,6 +29,7 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.12.12",
     "@types/better-sqlite3": "^7.6.11",
+    "@types/node-cron": "^3.0.11",
     "@types/supertest": "^6.0.2",
     "supertest": "^7.0.0",
     "tsx": "^4.10.5"

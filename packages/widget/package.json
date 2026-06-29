@@ -5,12 +5,13 @@
   "scripts": {
     "build": "node build.js",
     "dev": "node build.js --watch",
-    "test": "vitest run src --environment jsdom",
+    "test": "vitest run --environment jsdom",
     "check:size": "gzip-size dist/widget.js --raw --max-size 25000"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.21.3",
+    "gzip-size-cli": "^5.1.0",
     "jsdom": "^24.1.0",
     "typescript": "^5.4.5"
   }

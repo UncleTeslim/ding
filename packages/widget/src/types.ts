@@ -3,7 +3,6 @@ export type Position = "bottom-right" | "bottom-left" | "top-right" | "top-left"
 
 export type WidgetConfig = {
   apiBaseUrl: string;
-  projectKey: string;
   position: Position;
   color: string;
   trigger: Trigger;

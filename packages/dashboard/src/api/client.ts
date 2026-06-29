@@ -1,4 +1,4 @@
-import type { Announcement, AnnouncementPayload } from "../types";
+import type { Announcement, AnnouncementPayload, DailyPoint } from "../types";
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(path, {
@@ -26,6 +26,7 @@ export const api = {
       body: JSON.stringify({ username, password })
     }),
   logout: () => request<{ ok: true }>("/api/auth/logout", { method: "POST" }),
+  me: () => request<{ username: string }>("/api/auth/me"),
   listAnnouncements: () => request<{ announcements: Announcement[] }>("/api/admin/announcements"),
   createAnnouncement: (payload: AnnouncementPayload) =>
     request<{ announcement: Announcement }>("/api/admin/announcements", {
@@ -40,5 +41,6 @@ export const api = {
   deleteAnnouncement: (id: string) =>
     request<void>(`/api/admin/announcements/${id}`, {
       method: "DELETE"
-    })
+    }),
+  dailyAnalytics: () => request<{ daily: DailyPoint[] }>("/api/admin/analytics/daily")
 };

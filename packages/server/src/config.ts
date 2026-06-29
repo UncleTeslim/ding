@@ -7,7 +7,6 @@ const envSchema = z.object({
   DING_ADMIN_PASSWORD_HASH: z.string().min(1).default(bcrypt.hashSync("password", 10)),
   DING_JWT_SECRET: z.string().min(16).default("development-only-secret-change-me"),
   DING_IP_SALT: z.string().min(16).default("development-only-ip-salt-change-me"),
-  DING_BASE_URL: z.string().url().default("http://localhost:3000"),
   DING_DB_PATH: z.string().default("./data/ding.db"),
   DING_TRUST_PROXY: z.coerce.boolean().default(true),
   PORT: z.coerce.number().int().positive().default(3000),

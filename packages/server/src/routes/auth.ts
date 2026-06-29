@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { config, isProduction } from "../config.js";
 import { loginLimiter } from "../middleware/rateLimit.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const loginSchema = z.object({
   username: z.string().trim().min(1).max(120),
@@ -37,4 +38,8 @@ authRouter.post("/logout", (_req, res) => {
     sameSite: "strict"
   });
   res.json({ ok: true });
+});
+
+authRouter.get("/me", requireAuth, (_req, res) => {
+  res.json({ username: config.DING_ADMIN_USERNAME });
 });

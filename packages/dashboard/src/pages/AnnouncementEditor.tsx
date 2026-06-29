@@ -1,14 +1,10 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { renderMarkdown } from "../markdown";
 import type { Announcement, AnnouncementPayload, AnnouncementStatus } from "../types";
 
 const defaultTags = ["New Feature", "Fix", "Improvement", "Announcement"];
-
-function todayIso() {
-  return new Date().toISOString();
-}
 
 function dateInputValue(value: string | null) {
   return value ? value.slice(0, 10) : new Date().toISOString().slice(0, 10);
@@ -26,8 +22,35 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
   const [loading, setLoading] = useState(mode === "edit");
   const [error, setError] = useState("");
   const [dirty, setDirty] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const preview = useMemo(() => renderMarkdown(body), [body]);
+
+  function insertMarkdown(before: string, after: string, placeholder: string) {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = body.slice(start, end) || placeholder;
+    const newText = body.slice(0, start) + before + selected + after + body.slice(end);
+    setBody(newText);
+    setDirty(true);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + before.length, start + before.length + selected.length);
+    });
+  }
+
+  const loadAnnouncement = useCallback((announcement: Announcement) => {
+    setTitle(announcement.title);
+    setBody(announcement.body);
+    const isDefault = announcement.tag && defaultTags.includes(announcement.tag);
+    setTag(isDefault ? announcement.tag : "Announcement");
+    setCustomTag(isDefault ? "" : (announcement.tag ?? ""));
+    setStatus(announcement.status);
+    setDate(dateInputValue(announcement.published_at));
+    setDirty(false);
+  }, []);
 
   useEffect(() => {
     if (mode !== "edit" || !id) return;
@@ -39,7 +62,7 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load announcement"))
       .finally(() => setLoading(false));
-  }, [mode, id]);
+  }, [mode, id, loadAnnouncement]);
 
   useEffect(() => {
     function beforeUnload(event: BeforeUnloadEvent) {
@@ -51,23 +74,13 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
     return () => window.removeEventListener("beforeunload", beforeUnload);
   }, [dirty]);
 
-  function loadAnnouncement(announcement: Announcement) {
-    setTitle(announcement.title);
-    setBody(announcement.body);
-    setTag(announcement.tag);
-    setStatus(announcement.status);
-    setDate(dateInputValue(announcement.published_at));
-    setDirty(false);
-  }
-
   function payload(nextStatus: AnnouncementStatus): AnnouncementPayload {
-    const publicationDate = new Date(`${date}T12:00:00.000Z`).toISOString();
     return {
       title,
       body,
       tag: customTag.trim() || tag,
       status: nextStatus,
-      published_at: nextStatus === "published" ? publicationDate || todayIso() : null
+      published_at: nextStatus === "published" ? new Date(`${date}T12:00:00.000Z`).toISOString() : null
     };
   }
 
@@ -119,8 +132,13 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
           </label>
 
           <label>
-            Body
-            <textarea value={body} maxLength={5000} onChange={(event) => setBody(event.target.value)} required rows={15} placeholder="Describe what changed, why it matters, and where users can find it." />
+            Body <span className={`counter ${body.length > 4500 ? "counter-warn" : ""}`}>{body.length}/5000</span>
+            <div className="md-toolbar">
+              <button type="button" onClick={() => insertMarkdown("**", "**", "bold text")} title="Bold"><strong>B</strong></button>
+              <button type="button" onClick={() => insertMarkdown("*", "*", "italic text")} title="Italic"><em>I</em></button>
+              <button type="button" onClick={() => insertMarkdown("[", "](https://)", "link text")} title="Link">Link</button>
+            </div>
+            <textarea ref={textareaRef} value={body} maxLength={5000} onChange={(event) => setBody(event.target.value)} required rows={15} placeholder="Describe what changed, why it matters, and where users can find it." />
           </label>
 
           <div className="field-row">

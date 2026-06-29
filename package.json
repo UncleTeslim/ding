@@ -7,20 +7,22 @@
   "workspaces": [
     "packages/server",
     "packages/widget",
-    "packages/dashboard"
+    "packages/dashboard",
+    "site"
   ],
   "scripts": {
     "build": "npm run build -w @ding/widget && npm run build -w @ding/dashboard && npm run build -w @ding/server",
     "dev": "concurrently -n server,dashboard,widget -c blue,green,magenta \"npm run dev -w @ding/server\" \"npm run dev -w @ding/dashboard\" \"npm run dev -w @ding/widget\"",
-    "test": "npm run test -w @ding/server && npm run test -w @ding/widget",
+    "test": "npm run test -w @ding/server && npm run test -w @ding/widget && npm run test -w @ding/dashboard",
     "check:size": "npm run check:size -w @ding/widget",
-    "setup": "node scripts/setup.mjs"
+    "setup": "node scripts/setup.mjs",
+    "site:dev": "npm run dev -w @ding/site",
+    "site:build": "npm run build -w @ding/site"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
     "gzip-size-cli": "^5.1.0",
     "typescript": "^5.4.5",
-    "vite": "^8.0.16",
-    "vitest": "^4.1.8"
+    "vitest": "^1.6.0"
   }
 }

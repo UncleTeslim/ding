@@ -14,7 +14,6 @@ export function readConfig(script: HTMLScriptElement): WidgetConfig {
 
   return {
     apiBaseUrl: src.origin,
-    projectKey: script.dataset.projectKey ?? "",
     position: positions.includes(position) ? position : "bottom-right",
     color: validHex(script.dataset.color ?? null),
     trigger: triggers.includes(trigger) ? trigger : "bell"
