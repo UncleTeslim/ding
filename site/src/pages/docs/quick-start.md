@@ -53,6 +53,6 @@ http://localhost:3000/demo/
 
 ## Next steps
 
-- [Embed the widget](./embedding) in your own application
-- [Configure](./configuration) Ding for your environment
-- [Self-host](./self-hosting) Ding in production
+- [Embed the widget](../embedding) in your own application
+- [Configure](../configuration) Ding for your environment
+- [Self-host](../self-hosting) Ding in production

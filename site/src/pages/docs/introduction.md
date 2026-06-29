@@ -29,4 +29,4 @@ Ding is built for teams that want the same kind of experience without the data l
 
 ## Next steps
 
-Read [Quick Start](./quick-start) to get Ding running locally, or [Embedding the Widget](./embedding) to install it in your application.
+Read [Quick Start](../quick-start) to get Ding running locally, or [Embedding the Widget](../embedding) to install it in your application.
