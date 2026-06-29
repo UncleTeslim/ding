@@ -1,8 +1,14 @@
-# Deployment Guide
+---
+layout: ../../layouts/Docs.astro
+title: "Self-Hosting"
+description: "Deploy Ding to production with Docker, a reverse proxy, and backups."
+---
 
-This guide describes a practical production deployment for Ding.
+# Self-Hosting
 
-## 1. Prepare the Environment
+This guide covers deploying Ding to production.
+
+## 1. Prepare the environment
 
 Clone the repository on your server:
 
@@ -18,7 +24,9 @@ npm install
 npm run setup
 ```
 
-Review the generated `.env` file:
+This generates a `.env` file with a bcrypt password hash, JWT secret, and IP hashing salt.
+
+Review the generated `.env`:
 
 ```txt
 DING_ADMIN_USERNAME=admin
@@ -49,13 +57,13 @@ Expected response:
 { "ok": true, "db": "connected" }
 ```
 
-## 3. Configure a Reverse Proxy
+## 3. Configure a reverse proxy
 
 Ding expects HTTPS to be handled by your reverse proxy.
 
 ### Caddy
 
-```caddyfile
+```text
 ding.example.com {
   reverse_proxy localhost:3000
 }
@@ -77,9 +85,9 @@ server {
 }
 ```
 
-## 4. Embed the Widget
+## 4. Embed the widget
 
-After the instance is reachable over HTTPS, embed:
+After the instance is reachable over HTTPS, embed the widget:
 
 ```html
 <script
@@ -93,9 +101,7 @@ After the instance is reachable over HTTPS, embed:
 
 ## 5. Backups
 
-Ding stores data in SQLite. Back up the Docker volume or the database file at the path configured by `DING_DB_PATH`.
-
-A simple backup routine is enough for most v1 deployments:
+Ding stores data in SQLite. Back up the database file regularly.
 
 ```bash
 docker compose stop
@@ -114,10 +120,10 @@ docker compose up --build -d
 
 Migrations run automatically on startup.
 
-## 7. Operational Checks
+## 7. Operational checks
 
-- Confirm `/health` returns `ok`.
-- Confirm the admin dashboard loads.
-- Confirm `/widget.js` returns JavaScript.
-- Confirm the widget appears in a test page.
-- Confirm announcements remain after container restart.
+- Confirm `/health` returns `ok`
+- Confirm the admin dashboard loads
+- Confirm `/widget.js` returns JavaScript
+- Confirm the widget appears in a test page
+- Confirm announcements remain after container restart

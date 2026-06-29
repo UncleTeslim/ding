@@ -34,7 +34,6 @@ Please avoid sharing exploit code publicly before a fix is available.
 - Run `npm run setup` and keep the generated `.env` private.
 - Set `NODE_ENV=production`.
 - Put Ding behind HTTPS.
-- Set `DING_BASE_URL` to the public HTTPS URL.
 - Keep `DING_TRUST_PROXY=true` when using Caddy, Nginx, Traefik, Fly.io, Railway, or a similar proxy.
 - Back up the SQLite database file or Docker volume.
 - Do not reuse development secrets.

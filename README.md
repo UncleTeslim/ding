@@ -4,6 +4,11 @@
 
 # Ding
 
+<p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT">
+  <img src="https://img.shields.io/badge/bundle-4.2%20KB%20gzipped-6366f1" alt="Bundle size">
+</p>
+
 Ding is an open source, self-hosted changelog widget for web applications. It gives product teams a clean admin dashboard for publishing updates, and gives users a small in-app widget for reading what changed without leaving the product.
 
 It is built for teams that want the usefulness of Beamer or Headway, but prefer to own their infrastructure, their data, and their costs.
@@ -134,7 +139,7 @@ The server serves the dashboard, the public widget script, the public API, and p
 
 Read [SECURITY.md](SECURITY.md) for security guidance and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production setup.
 
-Read [docs/ROADMAP.md](docs/ROADMAP.md) for the next product milestones.
+Read the [docs](https://uncleteslim.github.io/ding/docs/) for detailed setup, configuration, API reference, and deployment guides.
 
 ## Development
 

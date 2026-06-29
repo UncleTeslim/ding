@@ -1,13 +1,14 @@
 ---
 const year = new Date().getFullYear();
 const repoUrl = "https://github.com/UncleTeslim/ding";
+const basePath = import.meta.env.BASE_URL || "/";
 ---
 
 <footer class="site-footer">
   <div class="container">
     <div class="footer-grid">
       <div class="footer-brand">
-        <a href="/" class="logo">
+        <a href={basePath} class="logo">
           <svg width="24" height="24" viewBox="0 0 48 48" fill="none">
             <rect x="4" y="4" width="40" height="40" rx="10" fill="#0f172a"/>
             <path d="M17 28.5V21a7 7 0 0 1 14 0v7.5l3 4.5H14l3-4.5Z" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
@@ -29,6 +30,7 @@ const repoUrl = "https://github.com/UncleTeslim/ding";
         <div class="footer-col">
           <h4>Resources</h4>
           <a href={repoUrl} target="_blank">GitHub</a>
+          <a href={`${basePath}docs/introduction`}>Docs</a>
           <a href={repoUrl + "/blob/main/README.md"} target="_blank">Documentation</a>
           <a href={repoUrl + "/blob/main/docs/DEPLOYMENT.md"} target="_blank">Deployment</a>
         </div>
