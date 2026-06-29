@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function AppShell() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    api.listAnnouncements()
+    api.me()
       .then(() => setChecking(false))
       .catch(() => navigate("/login"));
   }, [navigate]);
@@ -28,7 +29,10 @@ export function AppShell() {
           <NavLink to="/" end>Announcements</NavLink>
           <NavLink to="/new">Compose</NavLink>
         </nav>
-        <button className="ghost small" onClick={logout}>Log out</button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <ThemeToggle />
+          <button className="ghost small" onClick={logout}>Log out</button>
+        </div>
       </header>
       <main className="content">
         <Outlet />

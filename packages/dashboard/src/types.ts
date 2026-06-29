@@ -23,3 +23,9 @@ export type AnnouncementPayload = {
   status: AnnouncementStatus;
   published_at: string | null;
 };
+
+export type DailyPoint = {
+  date: string;
+  views: number;
+  clicks: number;
+};

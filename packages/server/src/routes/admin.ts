@@ -7,7 +7,7 @@ import {
   listAdmin,
   updateAnnouncement
 } from "../services/announcements.js";
-import { getAnalyticsMap } from "../services/analytics.js";
+import { getAnalyticsMap, getDailyBreakdown } from "../services/analytics.js";
 
 const baseSchema = z.object({
   title: z.string().trim().min(1).max(100),
@@ -80,4 +80,8 @@ adminRouter.get("/analytics", (_req, res) => {
     },
     by_announcement: byAnnouncement
   });
+});
+
+adminRouter.get("/analytics/daily", (_req, res) => {
+  res.json({ daily: getDailyBreakdown(7) });
 });

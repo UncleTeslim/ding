@@ -55,6 +55,38 @@ export function getAnalyticsMap() {
   return map;
 }
 
+export function getDailyBreakdown(days = 7): Array<{ date: string; views: number; clicks: number }> {
+  const cutoff = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10);
+  const rows = getDb()
+    .prepare(
+      `SELECT date(created_at) as date, event_type, COUNT(DISTINCT ip_hash) as count
+       FROM analytics_events
+       WHERE created_at >= ?
+       GROUP BY date(created_at), event_type
+       ORDER BY date(created_at)`
+    )
+    .all(cutoff) as Array<{ date: string; event_type: "view" | "click"; count: number }>;
+
+  const byDate = new Map<string, { views: number; clicks: number }>();
+  for (const row of rows) {
+    const entry = byDate.get(row.date) ?? { views: 0, clicks: 0 };
+    if (row.event_type === "view") entry.views = row.count;
+    if (row.event_type === "click") entry.clicks = row.count;
+    byDate.set(row.date, entry);
+  }
+
+  const result: Array<{ date: string; views: number; clicks: number }> = [];
+  const today = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const entry = byDate.get(dateStr) ?? { views: 0, clicks: 0 };
+    result.push({ date: dateStr, ...entry });
+  }
+  return result;
+}
+
 export function cleanupOldAnalytics() {
   getDb()
     .prepare("DELETE FROM analytics_events WHERE created_at < datetime('now', '-12 months')")

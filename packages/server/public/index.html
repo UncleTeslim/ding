@@ -4,27 +4,429 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Ding Widget Demo</title>
+    <title>Ding — Product Dashboard Demo</title>
     <style>
-      body {
-        margin: 0;
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background: #f8fafc;
-        color: #111827;
+      :root {
+        --bg: #f1f5f9;
+        --surface: #ffffff;
+        --sidebar: #0f172a;
+        --sidebar-hover: #1e293b;
+        --sidebar-text: #94a3b8;
+        --text: #0f172a;
+        --muted: #64748b;
+        --border: #e2e8f0;
+        --primary: #6366f1;
+        --green: #16a34a;
+        --amber: #d97706;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
       }
 
-      main {
-        max-width: 760px;
-        margin: 12vh auto;
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      a { color: var(--primary); text-decoration: none; }
+
+      .app-layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        min-height: 100vh;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        background: var(--sidebar);
+        color: var(--sidebar-text);
+        padding: 20px 0;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+      }
+
+      .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 20px 24px;
+      }
+
+      .sidebar-logo .mark {
+        width: 32px; height: 32px;
+        background: #1e293b;
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+      }
+
+      .sidebar-logo .mark svg { width: 18px; height: 18px; }
+
+      .sidebar-logo .name {
+        font-size: 17px;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: -0.5px;
+      }
+
+      .sidebar nav { display: flex; flex-direction: column; gap: 2px; padding: 0 12px; }
+
+      .sidebar nav a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 12px;
+        border-radius: 6px;
+        color: var(--sidebar-text);
+        font-size: 13px;
+        font-weight: 600;
+        transition: background 150ms;
+      }
+
+      .sidebar nav a:hover { background: var(--sidebar-hover); color: #e2e8f0; }
+      .sidebar nav a.active { background: var(--sidebar-hover); color: #fff; }
+      .sidebar nav a svg { width: 16px; height: 16px; opacity: 0.7; }
+
+      .sidebar-tag {
+        margin-top: 24px;
+        padding: 12px 20px;
+        font-size: 11px;
+        color: var(--sidebar-text);
+        border-top: 1px solid #1e293b;
+      }
+
+      .sidebar-tag strong { color: #cbd5e1; display: block; margin-bottom: 4px; font-size: 12px; }
+
+      /* Main */
+      .main { display: flex; flex-direction: column; }
+
+      .topbar {
+        height: 56px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         padding: 0 24px;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+      }
+
+      .topbar h2 { font-size: 16px; font-weight: 700; }
+      .topbar-right { display: flex; align-items: center; gap: 16px; }
+
+      .search {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 13px;
+        width: 200px;
+        color: var(--text);
+      }
+
+      .avatar {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 700;
+      }
+
+      .content { padding: 24px; max-width: 900px; }
+
+      /* Demo banner */
+      .demo-banner {
+        background: #ede9fe;
+        border: 1px solid #ddd6fe;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 24px;
+        font-size: 13px;
+        color: #5b21b6;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .demo-banner strong { font-weight: 700; }
+      .demo-banner button {
+        margin-left: auto;
+        padding: 5px 12px;
+        border-radius: 6px;
+        border: 1px solid #c4b5fd;
+        background: #fff;
+        color: #5b21b6;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .demo-banner button:hover { background: #f5f3ff; }
+
+      /* Stat cards */
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+      }
+
+      .stat-card .label {
+        font-size: 11px;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      .stat-card .value { font-size: 24px; font-weight: 800; }
+      .stat-card .trend { font-size: 12px; margin-top: 4px; }
+      .stat-card .trend.up { color: var(--green); }
+      .stat-card .trend.down { color: var(--amber); }
+
+      /* Panel */
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        margin-bottom: 24px;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .panel-header h3 { font-size: 14px; font-weight: 700; }
+      .panel-header a { font-size: 12px; font-weight: 600; }
+
+      table { width: 100%; border-collapse: collapse; }
+      th { text-align: left; padding: 10px 20px; font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 700; border-bottom: 1px solid var(--border); }
+      td { padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 13px; }
+      tr:last-child td { border-bottom: none; }
+
+      .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+      .badge.green { background: #dcfce7; color: #166534; }
+      .badge.blue { background: #dbeafe; color: #1e40af; }
+      .badge.amber { background: #fef3c7; color: #92400e; }
+      .badge::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+      .quick-actions { display: flex; gap: 12px; padding: 16px 20px; }
+
+      .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: opacity 150ms;
+      }
+      .btn:hover { opacity: 0.85; }
+      .btn.primary { background: var(--primary); color: #fff; }
+      .btn.ghost { background: var(--surface); color: var(--text); border-color: var(--border); }
+
+      /* Attention tooltip */
+      .ding-tooltip {
+        position: fixed;
+        background: #0f172a;
+        color: #fff;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        z-index: 99998;
+        opacity: 0;
+        transition: opacity 300ms;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+      .ding-tooltip.show { opacity: 1; }
+      .ding-tooltip::after {
+        content: "";
+        position: absolute;
+        bottom: -6px;
+        right: 14px;
+        border: 6px solid transparent;
+        border-top-color: #0f172a;
+        border-bottom: 0;
+      }
+
+      @media (max-width: 768px) {
+        .app-layout { grid-template-columns: 1fr; }
+        .sidebar { display: none; }
+        .stat-grid { grid-template-columns: repeat(2, 1fr); }
+        .search { display: none; }
       }
     </style>
   </head>
   <body>
-    <main>
-      <h1>Ding local demo</h1>
-      <p>This page loads the local widget script from the Ding server.</p>
-    </main>
-    <script src="/widget.js" data-project-key="local" data-position="bottom-right" data-color="#2563eb" data-trigger="both" async></script>
+    <div class="app-layout">
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <div class="mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round">
+              <path d="M9 15V11a3 3 0 0 1 6 0v4l1.5 2H7.5L9 15Z" />
+              <path d="M10.5 19a1.75 1.75 0 0 0 3 0" stroke-linecap="round" />
+            </svg>
+          </div>
+          <div class="name">Ding</div>
+        </div>
+        <nav>
+          <a href="#" class="active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Dashboard
+          </a>
+          <a href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            Projects
+          </a>
+          <a href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            Team
+          </a>
+          <a href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
+            Analytics
+          </a>
+          <a href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2"/></svg>
+            Settings
+          </a>
+        </nav>
+        <div class="sidebar-tag">
+          <strong>Ding widget embedded</strong>
+          Look for the bell icon in the corner of this page.
+        </div>
+      </aside>
+
+      <div class="main">
+        <header class="topbar">
+          <h2>Dashboard</h2>
+          <div class="topbar-right">
+            <input class="search" type="text" placeholder="Search..." />
+            <div class="avatar">TK</div>
+          </div>
+        </header>
+
+        <div class="content">
+          <div class="demo-banner">
+            <span>This is a mock product dashboard with the <strong>Ding changelog widget</strong> embedded. Publish an announcement from the <a href="/" target="_blank">admin dashboard</a>, then click "Refresh widget" to see it appear here.</span>
+            <button onclick="reloadWidget()">Refresh widget</button>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="label">Active Projects</div>
+              <div class="value">12</div>
+              <div class="trend up">+2 this week</div>
+            </div>
+            <div class="stat-card">
+              <div class="label">Open Tasks</div>
+              <div class="value">47</div>
+              <div class="trend down">-8 from last week</div>
+            </div>
+            <div class="stat-card">
+              <div class="label">Team Members</div>
+              <div class="value">8</div>
+              <div class="trend up">+1 this month</div>
+            </div>
+            <div class="stat-card">
+              <div class="label">Completion</div>
+              <div class="value">89%</div>
+              <div class="trend up">+5% this quarter</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Recent Activity</h3>
+              <a href="#">View all</a>
+            </div>
+            <table>
+              <thead>
+                <tr><th>Task</th><th>Status</th><th>Assignee</th><th>Updated</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Deploy v2.4 to production</td><td><span class="badge green">Done</span></td><td>TK</td><td>2 hours ago</td></tr>
+                <tr><td>Fix login redirect bug</td><td><span class="badge green">Done</span></td><td>AS</td><td>5 hours ago</td></tr>
+                <tr><td>Add dark mode to dashboard</td><td><span class="badge blue">In Progress</span></td><td>TK</td><td>1 day ago</td></tr>
+                <tr><td>Review API rate limiting</td><td><span class="badge amber">Pending</span></td><td>ML</td><td>2 days ago</td></tr>
+                <tr><td>Update onboarding flow</td><td><span class="badge blue">In Progress</span></td><td>JR</td><td>3 days ago</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header"><h3>Quick Actions</h3></div>
+            <div class="quick-actions">
+              <button class="btn primary">New Project</button>
+              <button class="btn ghost">Invite Member</button>
+              <button class="btn ghost">Export Report</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Widget embed: static tag for reliable currentScript detection -->
+    <script src="/widget.js" data-position="bottom-right" data-color="#6366f1" data-trigger="both" id="ding-widget-script"></script>
+
+    <script>
+      function reloadWidget() {
+        var script = document.getElementById("ding-widget-script");
+        var root = document.getElementById("ding-root");
+        if (root) root.remove();
+        if (script) {
+          var clone = script.cloneNode(true);
+          script.remove();
+          clone.id = "ding-widget-script";
+          document.head.appendChild(clone);
+        }
+      }
+
+      setTimeout(function () {
+        var bell = document.querySelector(".ding-bell");
+        if (!bell) return;
+        var tooltip = document.createElement("div");
+        tooltip.className = "ding-tooltip";
+        tooltip.textContent = "Click the bell to see what's new";
+        document.body.appendChild(tooltip);
+
+        var rect = bell.getBoundingClientRect();
+        tooltip.style.right = (window.innerWidth - rect.right - 4) + "px";
+        tooltip.style.bottom = (window.innerHeight - rect.top + 8) + "px";
+
+        requestAnimationFrame(function () { tooltip.classList.add("show"); });
+        setTimeout(function () {
+          tooltip.classList.remove("show");
+          setTimeout(function () { tooltip.remove(); }, 300);
+        }, 6000);
+
+        bell.addEventListener("click", function () {
+          tooltip.classList.remove("show");
+          setTimeout(function () { tooltip.remove(); }, 300);
+        }, { once: true });
+      }, 1500);
+    </script>
   </body>
 </html>
