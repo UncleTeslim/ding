@@ -7,7 +7,7 @@ This guide describes a practical production deployment for Ding.
 Clone the repository on your server:
 
 ```bash
-git clone https://github.com/teslimkazeem/ding
+git clone https://github.com/UncleTeslim/ding
 cd ding
 ```
 
@@ -25,14 +25,11 @@ DING_ADMIN_USERNAME=admin
 DING_ADMIN_PASSWORD_HASH=...
 DING_JWT_SECRET=...
 DING_IP_SALT=...
-DING_BASE_URL=https://ding.example.com
 DING_DB_PATH=/app/data/ding.db
 DING_TRUST_PROXY=true
 PORT=3000
 NODE_ENV=production
 ```
-
-Use a real HTTPS URL for `DING_BASE_URL`.
 
 ## 2. Run with Docker Compose
 
@@ -87,7 +84,6 @@ After the instance is reachable over HTTPS, embed:
 ```html
 <script
   src="https://ding.example.com/widget.js"
-  data-project-key="production"
   data-position="bottom-right"
   data-color="#155eef"
   data-trigger="both"
