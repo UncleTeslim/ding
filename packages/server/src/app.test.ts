@@ -174,6 +174,30 @@ describe("server", () => {
     expect(daily.body.daily).toHaveLength(7);
   });
 
+  it("bulk deletes multiple drafts", async () => {
+    const fresh = await loadFreshApp();
+    closeDb = fresh.closeDb;
+    const agent = request.agent(fresh.app);
+    await agent.post("/api/auth/login").send({ username: "admin", password: "password" }).expect(200);
+    const create = (title: string) =>
+      agent.post("/api/admin/announcements").send({ title, body: "Body", status: "draft", published_at: null }).expect(201);
+    const a1 = await create("Bulk1");
+    const a2 = await create("Bulk2");
+    const id1 = (a1.body.announcement as { id: string }).id;
+    const id2 = (a2.body.announcement as { id: string }).id;
+    const res = await agent.post("/api/admin/announcements/bulk-delete").send({ ids: [id1, id2] }).expect(200);
+    expect(res.body.deleted).toBe(2);
+    const list = await agent.get("/api/admin/announcements").expect(200);
+    expect((list.body.announcements as Array<{ id: string }>).find((a) => a.id === id1)).toBeUndefined();
+    expect((list.body.announcements as Array<{ id: string }>).find((a) => a.id === id2)).toBeUndefined();
+  });
+
+  it("rejects bulk delete without auth", async () => {
+    const fresh = await loadFreshApp();
+    closeDb = fresh.closeDb;
+    await request(fresh.app).post("/api/admin/announcements/bulk-delete").send({ ids: ["x"] }).expect(401);
+  });
+
   it("returns current user via /me", async () => {
     const fresh = await loadFreshApp();
     closeDb = fresh.closeDb;

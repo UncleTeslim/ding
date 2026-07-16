@@ -19,21 +19,6 @@ export function recordAnalyticsEvent(announcementId: string, eventType: "view" |
   ).run(announcementId, eventType, hashIp(ip));
 }
 
-export function getAnalyticsForAnnouncement(announcementId: string): AnalyticsSummary {
-  const rows = getDb()
-    .prepare(
-      `SELECT event_type, COUNT(DISTINCT ip_hash || '|' || date(created_at)) as count
-       FROM analytics_events
-       WHERE announcement_id = ?
-       GROUP BY event_type`
-    )
-    .all(announcementId) as Array<{ event_type: "view" | "click"; count: number }>;
-
-  const views = rows.find((row) => row.event_type === "view")?.count ?? 0;
-  const clicks = rows.find((row) => row.event_type === "click")?.count ?? 0;
-  return { views, clicks, ctr: views === 0 ? 0 : Number(((clicks / views) * 100).toFixed(1)) };
-}
-
 export function getAnalyticsMap() {
   const rows = getDb()
     .prepare(

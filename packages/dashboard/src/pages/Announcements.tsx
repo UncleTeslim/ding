@@ -35,6 +35,7 @@ export function Announcements() {
   const [daily, setDaily] = useState<DailyPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   async function load() {
     setLoading(true);
@@ -68,6 +69,22 @@ export function Announcements() {
     if (!confirm("Delete this announcement? This cannot be undone.")) return;
     await api.deleteAnnouncement(announcement.id);
     await load();
+  }
+
+  async function bulkRemove() {
+    if (!selectedIds.size) return;
+    if (!confirm(`Delete ${selectedIds.size} announcement${selectedIds.size > 1 ? "s" : ""}? This cannot be undone.`)) return;
+    await api.bulkDelete([...selectedIds]);
+    setSelectedIds(new Set());
+    await load();
+  }
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   }
 
   const published = announcements.filter((a) => a.status === "published").length;
@@ -124,9 +141,16 @@ export function Announcements() {
 
       {!loading && announcements.length ? (
         <div className="table-wrap surface">
+          {selectedIds.size > 0 ? (
+            <div className="bulk-bar">
+              <span>{selectedIds.size} selected</span>
+              <button className="danger-text" onClick={bulkRemove}>Delete selected</button>
+            </div>
+          ) : null}
           <table>
             <thead>
               <tr>
+                <th><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? new Set(announcements.map((a) => a.id)) : new Set())} checked={selectedIds.size === announcements.length} /></th>
                 <th>Status</th>
                 <th>Title</th>
                 <th>Tag</th>
@@ -140,6 +164,7 @@ export function Announcements() {
             <tbody>
               {announcements.map((announcement) => (
                 <tr key={announcement.id} className="clickable-row" onClick={() => navigate(`/edit/${announcement.id}`)}>
+                  <td onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(announcement.id)} onChange={() => toggleSelected(announcement.id)} /></td>
                   <td><span className={`status ${announcement.status}`}>{announcement.status}</span></td>
                   <td className="title-cell">
                     <div>{announcement.title}</div>

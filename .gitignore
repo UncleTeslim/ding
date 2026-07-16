@@ -5,3 +5,9 @@ data/
 .DS_Store
 coverage/
 *.log
+Ding_PRD.md
+Ding_TRD.md
+.agents/
+desktop.ini
+skills-lock.json
+site/.astro/dev.json
