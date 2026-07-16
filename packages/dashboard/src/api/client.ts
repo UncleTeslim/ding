@@ -42,5 +42,10 @@ export const api = {
     request<void>(`/api/admin/announcements/${id}`, {
       method: "DELETE"
     }),
+  bulkDelete: (ids: string[]) =>
+    request<{ deleted: number }>("/api/admin/announcements/bulk-delete", {
+      method: "POST",
+      body: JSON.stringify({ ids })
+    }),
   dailyAnalytics: () => request<{ daily: DailyPoint[] }>("/api/admin/analytics/daily")
 };

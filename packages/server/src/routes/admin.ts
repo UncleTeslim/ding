@@ -7,7 +7,7 @@ import {
   listAdmin,
   updateAnnouncement
 } from "../services/announcements.js";
-import { getAnalyticsMap, getDailyBreakdown } from "../services/analytics.js";
+import { getDailyBreakdown } from "../services/analytics.js";
 
 const baseSchema = z.object({
   title: z.string().trim().min(1).max(100),
@@ -63,13 +63,15 @@ adminRouter.delete("/announcements/:id", (req, res) => {
 });
 
 adminRouter.get("/analytics", (_req, res) => {
-  const announcements = listAdmin().filter((announcement) => announcement.status === "published");
-  const analytics = getAnalyticsMap();
-  const byAnnouncement = announcements.map((announcement) => ({
-    announcement_id: announcement.id,
-    title: announcement.title,
-    ...(analytics.get(announcement.id) ?? { views: 0, clicks: 0, ctr: 0 })
-  }));
+  const byAnnouncement = listAdmin()
+    .filter((announcement) => announcement.status === "published")
+    .map((announcement) => ({
+      announcement_id: announcement.id,
+      title: announcement.title,
+      views: announcement.analytics.views,
+      clicks: announcement.analytics.clicks,
+      ctr: announcement.analytics.ctr
+    }));
   const totalViews = byAnnouncement.reduce((sum, item) => sum + item.views, 0);
   const totalClicks = byAnnouncement.reduce((sum, item) => sum + item.clicks, 0);
   res.json({
@@ -84,4 +86,13 @@ adminRouter.get("/analytics", (_req, res) => {
 
 adminRouter.get("/analytics/daily", (_req, res) => {
   res.json({ daily: getDailyBreakdown(7) });
+});
+
+adminRouter.post("/announcements/bulk-delete", (req, res) => {
+  const parsed = z.object({
+    ids: z.array(z.string()).min(1).max(100)
+  }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Invalid ids.", issues: parsed.error.flatten() });
+  parsed.data.ids.forEach((id) => deleteAnnouncement(id));
+  res.json({ deleted: parsed.data.ids.length });
 });

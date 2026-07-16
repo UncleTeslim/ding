@@ -120,6 +120,20 @@ describe("render", () => {
     expect(titles[0]?.textContent).toBe("Test");
   });
 
+  it("renders at most 20 announcements in the panel", () => {
+    const root = createRoot();
+    const store = createStore();
+    const many: Announcement[] = Array.from({ length: 25 }, (_, i) => ({
+      id: `a${i}`,
+      title: `Announcement ${i}`,
+      body: "Short body",
+      tag: "Fix",
+      published_at: `2026-06-${String(i + 1).padStart(2, "0")}T00:00:00.000Z`
+    }));
+    render(root, config, store, makeState({ announcements: many }), () => {}, () => {});
+    expect(root.querySelectorAll(".ding-announcement")).toHaveLength(20);
+  });
+
   it("renders Read more button when body > 150 chars", () => {
     const root = createRoot();
     const store = createStore();

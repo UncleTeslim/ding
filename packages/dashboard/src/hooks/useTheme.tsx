@@ -19,7 +19,6 @@ function resolveTheme(theme: Theme): "light" | "dark" {
 
 type ThemeState = {
   theme: Theme;
-  resolved: "light" | "dark";
   setTheme: (t: Theme) => void;
   cycle: () => void;
 };
@@ -28,18 +27,12 @@ const ThemeCtx = createContext<ThemeState | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme);
-  const [resolved, setResolved] = useState<"light" | "dark">(() => resolveTheme(getInitialTheme()));
-
-  function applyTheme(t: Theme) {
-    const r = resolveTheme(t);
-    document.documentElement.dataset.theme = r;
-    setResolved(r);
-  }
+  const mqRef = window.matchMedia("(prefers-color-scheme: dark)");
 
   function setTheme(t: Theme) {
     try { localStorage.setItem("ding-theme", t); } catch {}
     setThemeState(t);
-    applyTheme(t);
+    document.documentElement.dataset.theme = resolveTheme(t);
   }
 
   function cycle() {
@@ -49,17 +42,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    applyTheme(theme);
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    document.documentElement.dataset.theme = resolveTheme(theme);
     const handler = () => {
-      if (theme === "system") applyTheme("system");
+      if (theme === "system") document.documentElement.dataset.theme = resolveTheme("system");
     };
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [theme]);
+    mqRef.addEventListener("change", handler);
+    return () => mqRef.removeEventListener("change", handler);
+  }, [theme, mqRef]);
 
   return (
-    <ThemeCtx.Provider value={{ theme, resolved, setTheme, cycle }}>
+    <ThemeCtx.Provider value={{ theme, setTheme, cycle }}>
       {children}
     </ThemeCtx.Provider>
   );

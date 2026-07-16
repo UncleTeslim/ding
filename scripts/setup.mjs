@@ -19,6 +19,7 @@ const env = [
   `DING_ADMIN_PASSWORD_HASH=${bcrypt.hashSync(password, 12)}`,
   `DING_JWT_SECRET=${randomBytes(48).toString("hex")}`,
   `DING_IP_SALT=${randomBytes(48).toString("hex")}`,
+  "DING_BASE_URL=http://localhost:3000",
   "DING_DB_PATH=./data/ding.db",
   "PORT=3000",
   "NODE_ENV=production",

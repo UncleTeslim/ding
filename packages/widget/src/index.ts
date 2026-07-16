@@ -38,7 +38,7 @@ function boot() {
     }
   };
 
-  async function load(showBanner = true) {
+  async function load() {
     try {
       state.announcements = await fetchAnnouncements(config);
       refresh();
@@ -50,7 +50,7 @@ function boot() {
   function openPanel() {
     state.open = true;
     justOpened = true;
-    if (state.open) markVisibleAsRead(config, store, state.announcements, state.viewedIds);
+    markVisibleAsRead(config, store, state.announcements, state.viewedIds);
     refresh();
   }
 
@@ -87,13 +87,13 @@ function boot() {
   function startPolling() {
     window.clearInterval(interval);
     interval = window.setInterval(() => {
-      if (document.visibilityState === "visible") load(false);
+      if (document.visibilityState === "visible") load();
     }, 60_000);
   }
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
-      load(false);
+      load();
       startPolling();
     } else {
       window.clearInterval(interval);

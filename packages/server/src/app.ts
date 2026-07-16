@@ -2,6 +2,8 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import cron from "node-cron";
+import { pinoHttp } from "pino-http";
+import { logger } from "./logger.js";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,6 +29,7 @@ export function createApp() {
   app.set("trust proxy", config.DING_TRUST_PROXY ? 1 : false);
   app.disable("x-powered-by");
   app.use(securityHeaders);
+  app.use(pinoHttp({ logger }));
 
   app.use(express.json({ limit: "64kb" }));
   app.use(cookieParser());
