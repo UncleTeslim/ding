@@ -34,6 +34,8 @@ Records that an announcement was visible when the widget panel opened.
 
 Returns `204`.
 
+Malformed or unknown announcement IDs are ignored and also return `204`.
+
 ### `POST /api/analytics/click`
 
 Records that a user expanded an announcement.
@@ -45,6 +47,8 @@ Records that a user expanded an announcement.
 ```
 
 Returns `204`.
+
+Malformed or unknown announcement IDs are ignored and also return `204`.
 
 ## Auth Endpoints
 
@@ -66,10 +70,15 @@ Clears the `ding_session` cookie.
 ## Admin Endpoints
 
 All admin endpoints require a valid `ding_session` cookie.
+Browser requests with a foreign `Origin` are rejected for mutating admin actions.
 
 ### `GET /api/admin/announcements`
 
 Returns drafts and published announcements with analytics.
+
+### `GET /api/admin/announcements/:id`
+
+Returns a single announcement by ID.
 
 ### `POST /api/admin/announcements`
 

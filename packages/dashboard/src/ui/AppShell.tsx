@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { api } from "../api/client";
+import { api, isUnauthorized } from "../api/client";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -11,7 +11,10 @@ export function AppShell() {
   useEffect(() => {
     api.me()
       .then(() => setChecking(false))
-      .catch(() => navigate("/login"));
+      .catch((err) => {
+        if (isUnauthorized(err)) navigate("/login");
+        else setChecking(false);
+      });
   }, [navigate]);
 
   async function logout() {

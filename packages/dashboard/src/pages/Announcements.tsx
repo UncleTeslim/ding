@@ -1,22 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../api/client";
+import { api, isUnauthorized } from "../api/client";
 import { useCountUp } from "../hooks/useCountUp";
 import { Sparkline } from "../ui/Sparkline";
 import type { Announcement, DailyPoint } from "../types";
-
-function formatDate(value: string | null) {
-  if (!value) return "No date";
-  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
-}
+import { formatShortDate } from "../utils/date";
 
 function relativeTime(value: string | null): string {
-  if (!value) return "—";
+  if (!value) return "-";
   const diff = Date.now() - new Date(value).getTime();
   const mins = Math.floor(diff / 60000);
   const hrs = Math.floor(mins / 60);
   const days = Math.floor(hrs / 24);
-  if (days > 30) return formatDate(value);
+  if (days > 30) return formatShortDate(value);
   if (days > 0) return `${days}d ago`;
   if (hrs > 0) return `${hrs}h ago`;
   if (mins > 0) return `${mins}m ago`;
@@ -48,7 +44,7 @@ export function Announcements() {
       setAnnouncements(res.announcements);
       setDaily(dailyRes.daily);
     } catch (err) {
-      if (err instanceof Error && err.message === "Unauthorized") navigate("/login");
+      if (isUnauthorized(err)) navigate("/login");
       else setError(err instanceof Error ? err.message : "Could not load announcements");
     } finally {
       setLoading(false);
@@ -82,23 +78,23 @@ export function Announcements() {
   function toggleSelected(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
 
-  const published = announcements.filter((a) => a.status === "published").length;
+  const published = announcements.filter((announcement) => announcement.status === "published").length;
   const drafts = announcements.length - published;
-  const totalViews = announcements.reduce((sum, a) => sum + a.analytics.views, 0);
-  const totalClicks = announcements.reduce((sum, a) => sum + a.analytics.clicks, 0);
+  const totalViews = announcements.reduce((sum, announcement) => sum + announcement.analytics.views, 0);
+  const totalClicks = announcements.reduce((sum, announcement) => sum + announcement.analytics.clicks, 0);
   const overallCtr = totalViews ? Number(((totalClicks / totalViews) * 100).toFixed(1)) : 0;
 
   const animatedPublished = useCountUp(published);
   const animatedDrafts = useCountUp(drafts);
   const animatedViews = useCountUp(totalViews);
   const animatedCtr = useCountUp(overallCtr);
-
-  const viewSeries = daily.map((d) => d.views);
+  const viewSeries = daily.map((point) => point.views);
 
   return (
     <section>
@@ -150,7 +146,7 @@ export function Announcements() {
           <table>
             <thead>
               <tr>
-                <th><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? new Set(announcements.map((a) => a.id)) : new Set())} checked={selectedIds.size === announcements.length} /></th>
+                <th><input type="checkbox" onChange={(event) => setSelectedIds(event.target.checked ? new Set(announcements.map((announcement) => announcement.id)) : new Set())} checked={announcements.length > 0 && selectedIds.size === announcements.length} /></th>
                 <th>Status</th>
                 <th>Title</th>
                 <th>Tag</th>
@@ -164,19 +160,19 @@ export function Announcements() {
             <tbody>
               {announcements.map((announcement) => (
                 <tr key={announcement.id} className="clickable-row" onClick={() => navigate(`/edit/${announcement.id}`)}>
-                  <td onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(announcement.id)} onChange={() => toggleSelected(announcement.id)} /></td>
+                  <td onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={selectedIds.has(announcement.id)} onChange={() => toggleSelected(announcement.id)} /></td>
                   <td><span className={`status ${announcement.status}`}>{announcement.status}</span></td>
                   <td className="title-cell">
                     <div>{announcement.title}</div>
                     <span>{announcement.body.slice(0, 110)}{announcement.body.length > 110 ? "..." : ""}</span>
                   </td>
                   <td>{announcement.tag || "-"}</td>
-                  <td title={formatDate(announcement.published_at)}>{relativeTime(announcement.published_at)}</td>
+                  <td title={formatShortDate(announcement.published_at)}>{relativeTime(announcement.published_at)}</td>
                   <td>{announcement.analytics.views}</td>
                   <td>{announcement.analytics.clicks}</td>
                   <td className={ctrClass(announcement.analytics.ctr)}>{announcement.analytics.views ? `${announcement.analytics.ctr.toFixed(1)}%` : "-"}</td>
                   <td>
-                    <div className="row-actions" onClick={(e) => e.stopPropagation()}>
+                    <div className="row-actions" onClick={(event) => event.stopPropagation()}>
                       <Link to={`/edit/${announcement.id}`}>Edit</Link>
                       <button className="text-button" onClick={() => toggle(announcement)}>{announcement.status === "published" ? "Unpublish" : "Publish"}</button>
                       <button className="danger-text" onClick={() => remove(announcement)}>Delete</button>

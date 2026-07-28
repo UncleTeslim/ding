@@ -5,7 +5,7 @@ export const analyticsLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => `${req.ip ?? "unknown"}:${req.body?.announcement_id ?? "unknown"}:${req.path}`
+  keyGenerator: (req) => `${req.ip ?? "unknown"}:${req.body.announcement_id}:${req.path}`
 });
 
 export const loginLimiter = rateLimit({

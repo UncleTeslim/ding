@@ -1,14 +1,11 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api } from "../api/client";
+import { api, isUnauthorized } from "../api/client";
 import { renderMarkdown } from "../markdown";
 import type { Announcement, AnnouncementPayload, AnnouncementStatus } from "../types";
+import { formatShortDate, toDateInputValue, toPublicationIso } from "../utils/date";
 
 const defaultTags = ["New Feature", "Fix", "Improvement", "Announcement"];
-
-function dateInputValue(value: string | null) {
-  return value ? value.slice(0, 10) : new Date().toISOString().slice(0, 10);
-}
 
 export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
   const navigate = useNavigate();
@@ -17,7 +14,7 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
   const [body, setBody] = useState("");
   const [tag, setTag] = useState<string | null>("Announcement");
   const [customTag, setCustomTag] = useState("");
-  const [date, setDate] = useState(dateInputValue(null));
+  const [date, setDate] = useState(toDateInputValue(null));
   const [status, setStatus] = useState<AnnouncementStatus>("draft");
   const [loading, setLoading] = useState(mode === "edit");
   const [error, setError] = useState("");
@@ -48,21 +45,22 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
     setTag(isDefault ? announcement.tag : "Announcement");
     setCustomTag(isDefault ? "" : (announcement.tag ?? ""));
     setStatus(announcement.status);
-    setDate(dateInputValue(announcement.published_at));
+    setDate(toDateInputValue(announcement.published_at));
     setDirty(false);
   }, []);
 
   useEffect(() => {
     if (mode !== "edit" || !id) return;
-    api.listAnnouncements()
+    api.getAnnouncement(id)
       .then((res) => {
-        const announcement = res.announcements.find((item) => item.id === id);
-        if (!announcement) throw new Error("Announcement not found");
-        loadAnnouncement(announcement);
+        loadAnnouncement(res.announcement);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load announcement"))
+      .catch((err) => {
+        if (isUnauthorized(err)) navigate("/login");
+        else setError(err instanceof Error ? err.message : "Could not load announcement");
+      })
       .finally(() => setLoading(false));
-  }, [mode, id, loadAnnouncement]);
+  }, [mode, id, navigate, loadAnnouncement]);
 
   useEffect(() => {
     function beforeUnload(event: BeforeUnloadEvent) {
@@ -80,7 +78,7 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
       body,
       tag: customTag.trim() || tag,
       status: nextStatus,
-      published_at: nextStatus === "published" ? new Date(`${date}T12:00:00.000Z`).toISOString() : null
+      published_at: nextStatus === "published" ? toPublicationIso(date) : null
     };
   }
 
@@ -183,7 +181,7 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
           </div>
           <div className="preview-meta">
             {customTag || tag ? <span className="status published">{customTag || tag}</span> : null}
-            <span>{new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(`${date}T12:00:00.000Z`))}</span>
+            <span>{formatShortDate(toPublicationIso(date))}</span>
           </div>
           <h2>{title || "Announcement title"}</h2>
           <div className="markdown-preview" dangerouslySetInnerHTML={{ __html: preview || "<p>Your announcement preview appears here.</p>" }} />

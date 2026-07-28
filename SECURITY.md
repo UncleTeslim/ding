@@ -22,19 +22,23 @@ Please avoid sharing exploit code publicly before a fix is available.
 - Admin access is protected by username and password.
 - The admin password is stored as a bcrypt hash.
 - Sessions are signed JWTs stored in HTTP-only cookies.
+- Admin and auth mutations reject cross-site browser requests with a foreign `Origin`.
 - Cookies use `SameSite=Strict`.
 - Cookies are marked `Secure` when `NODE_ENV=production`.
-- Production refuses weak development values for `DING_JWT_SECRET` and `DING_IP_SALT`.
+- Production refuses missing admin credentials, weak development values for `DING_JWT_SECRET` and `DING_IP_SALT`, the known development password, and non-HTTPS `DING_BASE_URL`.
 - Public widget endpoints are intentionally cross-origin.
 - Admin APIs are same-origin and require the session cookie.
-- Analytics store salted IP hashes, not raw IP addresses.
+- Analytics store keyed IP hashes, not raw IP addresses.
+- Analytics events are deduplicated per announcement, event type, IP hash, and day.
 
 ## Production Checklist
 
 - Run `npm run setup` and keep the generated `.env` private.
 - Set `NODE_ENV=production`.
 - Put Ding behind HTTPS.
-- Keep `DING_TRUST_PROXY=true` when using Caddy, Nginx, Traefik, Fly.io, Railway, or a similar proxy.
+- Set `DING_BASE_URL` to the public HTTPS URL.
+- Keep the Docker port bound to `127.0.0.1` or an internal network.
+- Keep `DING_TRUST_PROXY=false` unless the immediate proxy hop is trusted. `true` maps to `loopback`.
 - Back up the SQLite database file or Docker volume.
 - Do not reuse development secrets.
 - Do not commit `.env`.

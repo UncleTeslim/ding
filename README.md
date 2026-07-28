@@ -101,11 +101,11 @@ For local testing, use:
 | `DING_JWT_SECRET` | Yes | Secret used to sign admin session cookies |
 | `DING_IP_SALT` | Yes | Salt used before hashing IP addresses |
 | `DING_DB_PATH` | No | SQLite file path. Defaults to `./data/ding.db` |
-| `DING_TRUST_PROXY` | No | Set to `true` when Ding is behind a reverse proxy |
+| `DING_TRUST_PROXY` | No | Defaults to `false`. Use `true` only when the immediate proxy hop is trusted; `true` maps to Express' `loopback` trust setting. |
 | `PORT` | No | Server port. Defaults to `3000` |
 | `NODE_ENV` | No | Use `production` in production |
 
-In production, Ding refuses weak development secrets for `DING_JWT_SECRET` and `DING_IP_SALT`.
+In production, Ding refuses missing admin credentials, weak development secrets, the known development password, and non-HTTPS `DING_BASE_URL` values.
 
 ## Docker
 
@@ -126,15 +126,16 @@ Ding ships as one deployable service:
 - `packages/dashboard`: React admin dashboard built with Vite
 
 The server serves the dashboard, the public widget script, the public API, and protected admin APIs from one process.
+Server startup, static assets, maintenance jobs, repositories, and domain services live in separate modules so API routes stay focused on HTTP concerns.
 
 ## Security and Privacy
 
 - Admin sessions use HTTP-only cookies
 - Passwords are stored as bcrypt hashes
 - Widget read state stays in the browser through `localStorage`
-- Analytics store announcement ID, timestamp, and salted IP hash
+- Analytics store announcement ID, timestamp, and keyed IP hash
 - Raw IP addresses are not stored
-- Production rejects weak JWT and IP salt values
+- Production rejects missing admin credentials, weak JWT/IP secrets, the known development password, and non-HTTPS base URLs
 - The widget can be embedded cross-origin, while admin routes remain same-origin
 
 Read [SECURITY.md](SECURITY.md) for security guidance and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production setup.

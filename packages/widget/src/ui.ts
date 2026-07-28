@@ -1,18 +1,18 @@
-import { postEvent } from "./api";
 import { renderMarkdown, truncateText } from "./markdown";
 import type { Store } from "./storage";
 import { unreadCount } from "./storage";
+import type { WidgetState } from "./state";
 import type { Announcement, WidgetConfig } from "./types";
 
-export type WidgetState = {
-  announcements: Announcement[];
-  open: boolean;
-  expanded: Set<string>;
-  viewedIds: Set<string>;
+export type WidgetActions = {
+  togglePanel: (event?: Event) => void;
+  dismissBanner: (announcementId: string) => void;
+  expandAnnouncement: (announcementId: string) => void;
+  refresh: () => void;
 };
 
 const rootId = "ding-root";
-const MAX_VISIBLE = 20;
+const maxVisible = 20;
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
@@ -85,7 +85,7 @@ export function createRoot() {
   return root;
 }
 
-export function render(root: HTMLElement, config: WidgetConfig, store: Store, state: WidgetState, onToggle: () => void, onRefresh: () => void) {
+export function render(root: HTMLElement, config: WidgetConfig, store: Store, state: WidgetState, actions: WidgetActions) {
   const count = unreadCount(state.announcements, store.readIds());
   const latest = state.announcements[0];
   const showBell = config.trigger === "bell" || config.trigger === "both";
@@ -99,51 +99,35 @@ export function render(root: HTMLElement, config: WidgetConfig, store: Store, st
     <div class="ding-backdrop" data-ding-close></div>
     <section class="ding-panel" role="dialog" aria-modal="true" aria-label="Changelog" style="${panelPosition}${panelVertical}">
       <div class="ding-panel-header"><h2>What's new</h2><button class="ding-icon-button" aria-label="Close" data-ding-close>&times;</button></div>
-      <div class="ding-list">${state.announcements.length ? state.announcements.slice(0, MAX_VISIBLE).map((announcement) => announcementHtml(announcement, state.expanded.has(announcement.id))).join("") : `<div class="ding-empty">No announcements yet.</div>`}</div>
+      <div class="ding-list">${state.announcements.length ? state.announcements.slice(0, maxVisible).map((announcement) => announcementHtml(announcement, state.expanded.has(announcement.id))).join("") : `<div class="ding-empty">No announcements yet.</div>`}</div>
     </section>
   `;
 
-  root.querySelectorAll("[data-ding-open]").forEach((button) => button.addEventListener("click", onToggle));
-  root.querySelectorAll("[data-ding-close]").forEach((button) => button.addEventListener("click", onToggle));
+  root.querySelectorAll("[data-ding-open]").forEach((button) => button.addEventListener("click", actions.togglePanel));
+  root.querySelectorAll("[data-ding-close]").forEach((button) => button.addEventListener("click", actions.togglePanel));
   root.querySelector("[data-ding-dismiss]")?.addEventListener("click", () => {
-    store.dismissBanner(latest.id);
-    onRefresh();
+    if (latest) actions.dismissBanner(latest.id);
   });
   root.querySelectorAll<HTMLElement>("[data-ding-read-more]").forEach((button) => {
     button.addEventListener("click", () => {
       const id = button.dataset.dingReadMore;
       if (!id) return;
-      const announcement = state.announcements.find((a) => a.id === id);
-      if (!announcement) return;
-      state.expanded.add(id);
-      postEvent(config, "click", id);
-      const bodyEl = button.closest(".ding-announcement")?.querySelector(".ding-body");
-      if (bodyEl) {
-        bodyEl.innerHTML = renderMarkdown(announcement.body);
-        bodyEl.classList.add("ding-body-expanded");
-      }
+      actions.expandAnnouncement(id);
     });
   });
 }
 
 function announcementHtml(announcement: Announcement, expanded: boolean) {
-  const body = expanded ? renderMarkdown(announcement.body) : `${escapeHtml(truncateText(announcement.body))} ${announcement.body.length > 150 ? `<button class="ding-read-more" data-ding-read-more="${escapeHtml(announcement.id)}">Read more</button>` : ""}`;
+  const body = expanded
+    ? renderMarkdown(announcement.body)
+    : `${escapeHtml(truncateText(announcement.body))} ${announcement.body.length > 150 ? `<button class="ding-read-more" data-ding-read-more="${escapeHtml(announcement.id)}">Read more</button>` : ""}`;
+  const bodyClass = expanded ? "ding-body ding-body-expanded" : "ding-body";
+
   return `
     <article class="ding-announcement">
       <div class="ding-meta">${announcement.tag ? `<span class="ding-tag">${escapeHtml(announcement.tag)}</span>` : ""}<time datetime="${escapeHtml(announcement.published_at)}">${formatDate(announcement.published_at)}</time></div>
       <h3 class="ding-title">${escapeHtml(announcement.title)}</h3>
-      <div class="ding-body">${body}</div>
+      <div class="${bodyClass}">${body}</div>
     </article>
   `;
-}
-
-export function markVisibleAsRead(config: WidgetConfig, store: Store, announcements: Announcement[], viewedIds: Set<string>) {
-  const ids = announcements.map((announcement) => announcement.id);
-  store.setReadIds([...store.readIds(), ...ids]);
-  for (const id of ids) {
-    if (!viewedIds.has(id)) {
-      viewedIds.add(id);
-      postEvent(config, "view", id);
-    }
-  }
 }
