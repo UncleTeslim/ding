@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { createRoot, injectStyles, render, markVisibleAsRead } from "./ui";
+import { createRoot, injectStyles, render, type WidgetActions } from "./ui";
+import { markVisibleAsRead } from "./events";
 import { createStore } from "./storage";
 import type { Announcement, WidgetConfig } from "./types";
 import { postEvent } from "./api";
@@ -29,6 +30,13 @@ function makeState(overrides: Partial<{ announcements: Announcement[]; open: boo
     ...overrides
   };
 }
+
+const actions: WidgetActions = {
+  togglePanel: vi.fn(),
+  dismissBanner: vi.fn(),
+  expandAnnouncement: vi.fn(),
+  refresh: vi.fn()
+};
 
 beforeEach(() => {
   document.body.innerHTML = "";
@@ -75,28 +83,28 @@ describe("render", () => {
   it("renders bell button when trigger is bell", () => {
     const root = createRoot();
     const store = createStore();
-    render(root, config, store, makeState(), () => {}, () => {});
+    render(root, config, store, makeState(), actions);
     expect(root.querySelector(".ding-bell")).not.toBeNull();
   });
 
   it("renders bell button when trigger is both", () => {
     const root = createRoot();
     const store = createStore();
-    render(root, { ...config, trigger: "both" }, store, makeState(), () => {}, () => {});
+    render(root, { ...config, trigger: "both" }, store, makeState(), actions);
     expect(root.querySelector(".ding-bell")).not.toBeNull();
   });
 
   it("does not render bell when trigger is banner only", () => {
     const root = createRoot();
     const store = createStore();
-    render(root, { ...config, trigger: "banner" }, store, makeState(), () => {}, () => {});
+    render(root, { ...config, trigger: "banner" }, store, makeState(), actions);
     expect(root.querySelector(".ding-bell")).toBeNull();
   });
 
   it("renders badge with unread count", () => {
     const root = createRoot();
     const store = createStore();
-    render(root, config, store, makeState(), () => {}, () => {});
+    render(root, config, store, makeState(), actions);
     const badge = root.querySelector(".ding-badge");
     expect(badge).not.toBeNull();
     expect(badge?.textContent).toBe("1");
@@ -105,7 +113,7 @@ describe("render", () => {
   it("renders panel section always without hidden attribute", () => {
     const root = createRoot();
     const store = createStore();
-    render(root, config, store, makeState(), () => {}, () => {});
+    render(root, config, store, makeState(), actions);
     const panel = root.querySelector(".ding-panel");
     expect(panel).not.toBeNull();
     expect(panel?.hasAttribute("hidden")).toBe(false);
@@ -114,7 +122,7 @@ describe("render", () => {
   it("renders announcement list with titles", () => {
     const root = createRoot();
     const store = createStore();
-    render(root, config, store, makeState(), () => {}, () => {});
+    render(root, config, store, makeState(), actions);
     const titles = root.querySelectorAll(".ding-title");
     expect(titles).toHaveLength(1);
     expect(titles[0]?.textContent).toBe("Test");
@@ -130,7 +138,7 @@ describe("render", () => {
       tag: "Fix",
       published_at: `2026-06-${String(i + 1).padStart(2, "0")}T00:00:00.000Z`
     }));
-    render(root, config, store, makeState({ announcements: many }), () => {}, () => {});
+    render(root, config, store, makeState({ announcements: many }), actions);
     expect(root.querySelectorAll(".ding-announcement")).toHaveLength(20);
   });
 
@@ -144,14 +152,14 @@ describe("render", () => {
       tag: "Fix",
       published_at: "2026-01-01T00:00:00.000Z"
     };
-    render(root, config, store, makeState({ announcements: [longAnnouncement] }), () => {}, () => {});
+    render(root, config, store, makeState({ announcements: [longAnnouncement] }), actions);
     expect(root.querySelector(".ding-read-more")).not.toBeNull();
   });
 
   it("does not render Read more button when body is short", () => {
     const root = createRoot();
     const store = createStore();
-    render(root, config, store, makeState(), () => {}, () => {});
+    render(root, config, store, makeState(), actions);
     expect(root.querySelector(".ding-read-more")).toBeNull();
   });
 });

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { config, isProduction } from "../config.js";
+import { noStore, requireSameOrigin } from "../middleware/csrf.js";
 import { loginLimiter } from "../middleware/rateLimit.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -12,6 +13,8 @@ const loginSchema = z.object({
 });
 
 export const authRouter = Router();
+authRouter.use(noStore);
+authRouter.use(requireSameOrigin);
 
 authRouter.post("/login", loginLimiter, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
@@ -21,7 +24,12 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
   const passwordMatches = await bcrypt.compare(parsed.data.password, config.DING_ADMIN_PASSWORD_HASH);
   if (!usernameMatches || !passwordMatches) return res.status(401).json({ error: "Invalid credentials" });
 
-  const token = jwt.sign({ sub: "admin" }, config.DING_JWT_SECRET, { expiresIn: "7d" });
+  const token = jwt.sign({ sub: "admin" }, config.DING_JWT_SECRET, {
+    algorithm: "HS256",
+    audience: "ding-admin",
+    expiresIn: "7d",
+    issuer: "ding"
+  });
   res.cookie("ding_session", token, {
     httpOnly: true,
     secure: isProduction,

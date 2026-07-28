@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { listPublished } from "../services/announcements.js";
+import { listPublished } from "../modules/announcements/service.js";
 
 export const publicRouter = Router();
 

@@ -7,7 +7,11 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!token) return res.status(401).json({ error: "Unauthorized" });
 
   try {
-    jwt.verify(token, config.DING_JWT_SECRET);
+    jwt.verify(token, config.DING_JWT_SECRET, {
+      algorithms: ["HS256"],
+      audience: "ding-admin",
+      issuer: "ding"
+    });
     next();
   } catch {
     res.status(401).json({ error: "Unauthorized" });

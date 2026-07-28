@@ -26,7 +26,7 @@ DING_ADMIN_PASSWORD_HASH=...
 DING_JWT_SECRET=...
 DING_IP_SALT=...
 DING_DB_PATH=/app/data/ding.db
-DING_TRUST_PROXY=true
+DING_TRUST_PROXY=false
 PORT=3000
 NODE_ENV=production
 ```
@@ -37,7 +37,7 @@ NODE_ENV=production
 docker compose up --build -d
 ```
 
-Check health:
+By default, Compose publishes Ding on `127.0.0.1:3000`, so it is reachable to a local reverse proxy but not directly exposed to the public internet. Check health:
 
 ```bash
 curl http://localhost:3000/health
@@ -52,6 +52,8 @@ Expected response:
 ## 3. Configure a Reverse Proxy
 
 Ding expects HTTPS to be handled by your reverse proxy.
+
+Keep `DING_TRUST_PROXY=false` unless the immediate connection into Express comes from a trusted local/private proxy hop. If you do enable it, `true` is treated as `loopback`; `loopback`, `linklocal`, and `uniquelocal` are also accepted.
 
 ### Caddy
 
