@@ -14,17 +14,6 @@ const dashboardCsp = [
   "connect-src 'self'"
 ].join("; ");
 
-const demoCsp = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "img-src 'self' data:",
-  "style-src 'self' 'unsafe-inline'",
-  "script-src 'self'",
-  "connect-src 'self'"
-].join("; ");
-
 export function securityHeaders(req: Request, res: Response, next: NextFunction) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -41,6 +30,6 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
     return next();
   }
 
-  res.setHeader("Content-Security-Policy", req.path.startsWith("/demo") ? demoCsp : dashboardCsp);
+  res.setHeader("Content-Security-Policy", dashboardCsp);
   next();
 }
