@@ -7,8 +7,7 @@
   "workspaces": [
     "packages/server",
     "packages/widget",
-    "packages/dashboard",
-    "site"
+    "packages/dashboard"
   ],
   "scripts": {
     "build": "npm run build -w @ding/widget && npm run build -w @ding/dashboard && npm run build -w @ding/server",
@@ -18,9 +17,7 @@
     "check:size": "npm run check:size -w @ding/widget",
     "coverage": "npm run coverage -w @ding/server && npm run coverage -w @ding/widget",
     "benchmark": "node scripts/benchmark.mjs",
-    "setup": "node scripts/setup.mjs",
-    "site:dev": "npm run dev -w @ding/site",
-    "site:build": "npm run build -w @ding/site"
+    "setup": "node scripts/setup.mjs"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.15",
