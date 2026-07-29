@@ -37,12 +37,6 @@ Open the admin dashboard:
 http://localhost:3000
 ```
 
-Open the local widget demo:
-
-```txt
-http://localhost:3000/demo/
-```
-
 The development credentials in `.env.example` are:
 
 ```txt
@@ -140,7 +134,7 @@ Server startup, static assets, maintenance jobs, repositories, and domain servic
 
 Read [SECURITY.md](SECURITY.md) for security guidance and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production setup.
 
-Read the [docs](https://uncleteslim.github.io/ding/docs/) for detailed setup, configuration, API reference, and deployment guides.
+Read the [docs](https://dingwidget.com/docs/) for detailed setup, configuration, API reference, and deployment guides.
 
 ## Development
 

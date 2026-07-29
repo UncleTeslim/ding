@@ -39,20 +39,13 @@ Username: admin
 Password: password
 ```
 
-Open the local widget demo:
-
-```
-http://localhost:3000/demo/
-```
-
 ## What you see
 
 - **Dashboard** — create and publish announcements, view analytics
 - **Widget** — a small bell icon in the bottom-right corner with your published announcements
-- **Demo page** — a test page with the widget already embedded
 
 ## Next steps
 
-- [Embed the widget](../embedding) in your own application
+- [Embed the widget](../embedding) in your own local application or test page
 - [Configure](../configuration) Ding for your environment
 - [Self-host](../self-hosting) Ding in production

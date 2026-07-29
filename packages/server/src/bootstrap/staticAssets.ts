@@ -9,7 +9,6 @@ const repoRoot = resolve(currentDir, "../../../..");
 export function mountStaticAssets(app: Express) {
   const widgetDist = join(repoRoot, "packages/widget/dist");
   const dashboardDist = join(repoRoot, "packages/dashboard/dist");
-  const demoDir = join(repoRoot, "packages/server/public");
 
   if (existsSync(widgetDist)) {
     app.use(
@@ -24,8 +23,6 @@ export function mountStaticAssets(app: Express) {
       })
     );
   }
-
-  if (existsSync(demoDir)) app.use("/demo", express.static(demoDir));
 
   if (existsSync(dashboardDist)) {
     app.use(express.static(dashboardDist));

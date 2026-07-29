@@ -1,7 +1,6 @@
 import { defineConfig } from "astro/config";
 
 export default defineConfig({
-  site: "https://uncleteslim.github.io",
-  base: "/ding/",
+  site: "https://dingwidget.com",
   output: "static"
 });

@@ -10,7 +10,7 @@ npm install
 npm run dev
 ```
 
-The server runs on `http://localhost:3000`. The dashboard dev server runs on `http://localhost:5173`. The widget demo is available at `http://localhost:3000/demo/` after the widget has been built.
+The server runs on `http://localhost:3000`. The dashboard dev server runs on `http://localhost:5173`.
 
 ## Useful Commands
 
