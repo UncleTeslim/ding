@@ -9,7 +9,6 @@ services:
       - ding-data:/app/data
     env_file:
       - .env
-    read_only: true
     tmpfs:
       - /tmp
     security_opt:

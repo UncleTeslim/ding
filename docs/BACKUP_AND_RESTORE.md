@@ -1,17 +1,21 @@
 # Backup and Restore
 
-Ding uses an embedded SQLite database stored in the persistent `ding-data` Docker volume. The database is not a separate container. Treat the volume as the source of truth for announcements and analytics.
+> [Ding docs](README.md) · [Deployment](DEPLOYMENT.md) · **Backup and restore** · [Upgrading](UPGRADING.md) · [Troubleshooting](TROUBLESHOOTING.md)
 
-## Before a backup
+Ding stores announcements and analytics in one SQLite database inside the persistent `ding-data` Docker volume. The volume is the important data to protect; rebuilding the image does not replace it, but deleting the volume does.
 
-Create a local backup directory and stop Ding cleanly. A clean stop lets SQLite checkpoint its write-ahead log before the file is copied.
+The safest backup is a copy of the database while Ding is stopped. This avoids copying the database halfway through a write.
+
+## Create a backup
+
+Create a local backup directory and stop Ding cleanly:
 
 ```bash
 mkdir -p backups
 docker compose stop ding
 ```
 
-Copy the database out of the stopped container:
+Copy the database out of the stopped container, then start Ding again:
 
 ```bash
 docker compose cp -a ding:/app/data/ding.db "./backups/ding-$(date +%Y-%m-%d).db"
@@ -27,9 +31,9 @@ docker compose cp -a ding:/app/data/ding.db .\backups\ding-2026-07-30.db
 docker compose start ding
 ```
 
-Keep multiple dated backups. Store at least one copy outside the server that runs Ding.
+Use a new filename for every backup. Keep multiple dated backups, and store at least one copy outside the server that runs Ding.
 
-## Verify a backup
+## Check that the backup worked
 
 After restarting, check the service:
 
@@ -38,11 +42,13 @@ curl --fail http://127.0.0.1:3000/health
 docker compose ps
 ```
 
-Confirm that the backup file exists and is non-empty. Periodically perform a restore drill on a separate Ding instance; a backup that has never been restored is not a verified backup.
+Confirm that the backup file exists and is non-empty. Open the dashboard after restarting Ding and check that existing announcements are still present.
+
+Periodically test a restore on a separate Ding instance. A backup that has never been restored is not a verified backup.
 
 ## Restore a backup
 
-Stop Ding and copy the selected file back into the volume:
+Restoring replaces the current database. Keep the current database as a separate backup first, then stop Ding and copy the selected backup into the volume:
 
 ```bash
 docker compose stop ding
@@ -59,14 +65,16 @@ docker compose logs --tail=100 ding
 
 Open the dashboard and confirm that announcements and analytics are present.
 
-## Important volume warnings
+If Ding does not start after a restore, read the first error in the logs and check that the restored file is readable. Do not keep restarting a failing container without checking the logs.
+
+## Important warnings
 
 - `docker compose down` keeps the named volume.
 - `docker compose down -v` deletes the named volume and its SQLite database.
 - Removing the repository directory does not remove a named Docker volume, but deleting Docker volumes does.
-- Do not copy the SQLite file while Ding is actively writing unless you use SQLite online-backup tooling or an infrastructure snapshot designed for SQLite WAL files.
+- Do not copy the SQLite file while Ding is actively writing. The database may use small companion files during a write, so a live copy may be incomplete.
 - Keep the pre-restore database as a separate backup until the restored instance has been validated.
 
-## Bind-mounted storage
+## If you changed the storage setup
 
-If you replace the named volume with a host bind mount, back up the host directory only after stopping Ding. Keep the directory writable by the container's `node` user and do not expose the database file through a web server.
+If you replace the named volume with a host folder, back up that folder only after stopping Ding. Keep it writable by the container's `node` user and never expose the database file through a web server.

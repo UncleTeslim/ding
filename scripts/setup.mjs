@@ -20,6 +20,10 @@ export function validatePublicUrl(value) {
   return url.origin;
 }
 
+export function formatEnvValue(value) {
+  return `'${String(value).replaceAll("'", "\\'")}'`;
+}
+
 export async function runSetup({ inputStream = input, outputStream = output, envPath = ".env" } = {}) {
   const rl = readline.createInterface({ input: inputStream, output: outputStream });
 
@@ -35,15 +39,15 @@ export async function runSetup({ inputStream = input, outputStream = output, env
   const publicUrl = validatePublicUrl(publicUrlInput);
 
   const env = [
-    `DING_ADMIN_USERNAME=${username}`,
-    `DING_ADMIN_PASSWORD_HASH=${bcrypt.hashSync(password, 12)}`,
-    `DING_JWT_SECRET=${randomBytes(48).toString("hex")}`,
-    `DING_IP_SALT=${randomBytes(48).toString("hex")}`,
-    `DING_BASE_URL=${publicUrl}`,
-    "DING_DB_PATH=./data/ding.db",
-    "DING_TRUST_PROXY=false",
-    "PORT=3000",
-    "NODE_ENV=production",
+    `DING_ADMIN_USERNAME=${formatEnvValue(username)}`,
+    `DING_ADMIN_PASSWORD_HASH=${formatEnvValue(bcrypt.hashSync(password, 12))}`,
+    `DING_JWT_SECRET=${formatEnvValue(randomBytes(48).toString("hex"))}`,
+    `DING_IP_SALT=${formatEnvValue(randomBytes(48).toString("hex"))}`,
+    `DING_BASE_URL=${formatEnvValue(publicUrl)}`,
+    `DING_DB_PATH=${formatEnvValue("./data/ding.db")}`,
+    `DING_TRUST_PROXY=${formatEnvValue("false")}`,
+    `PORT=${formatEnvValue("3000")}`,
+    `NODE_ENV=${formatEnvValue("production")}`,
     ""
   ].join("\n");
 

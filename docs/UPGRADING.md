@@ -1,16 +1,26 @@
 # Upgrading Ding
 
+> [Ding docs](README.md) · [Deployment](DEPLOYMENT.md) · [Backup and restore](BACKUP_AND_RESTORE.md) · **Upgrading** · [Troubleshooting](TROUBLESHOOTING.md)
+
 Use a tagged release for production deployments when possible. Following `main` directly can include unfinished changes.
+
+An upgrade replaces the Ding container with a newly built one. Your database stays in the `ding-data` volume. Ding runs database updates automatically when the new container starts.
 
 ## Before upgrading
 
-1. Read the release notes and migration notes.
+1. Read the release notes and any migration notes.
 2. Confirm that you can access the admin credentials and `.env` file.
 3. Create and verify a database backup using [Backup and Restore](BACKUP_AND_RESTORE.md).
-4. Record the current Ding version and Git commit.
+4. Record the current Ding version and Git commit:
+
+   ```bash
+   git rev-parse --short HEAD
+   git describe --tags --always
+   ```
+
 5. Confirm that the Docker host has enough disk space for a new image and a temporary backup.
 
-## Source deployment
+## Upgrade from a release tag
 
 From the Ding checkout:
 
@@ -20,7 +30,7 @@ git checkout <release-tag>
 docker compose up --build -d --wait
 ```
 
-Migrations run automatically during startup. Check the result:
+Replace `<release-tag>` with the version you want, such as `v1.2.0`. Migrations run automatically during startup. Check the result:
 
 ```bash
 curl --fail http://127.0.0.1:3000/health
@@ -30,6 +40,14 @@ docker compose logs --tail=100 ding
 
 Then open the dashboard and test the widget from a real host page.
 
+If you intentionally deploy the latest development code instead of a release, update `main` first:
+
+```bash
+git checkout main
+git pull --ff-only origin main
+docker compose up --build -d --wait
+```
+
 ## If an upgrade fails
 
 Do not repeatedly restart a failing container before checking the logs:
@@ -38,13 +56,15 @@ Do not repeatedly restart a failing container before checking the logs:
 docker compose logs --tail=200 ding
 ```
 
-If the failure is application-only, return to the previous release tag and rebuild. If a migration changed the database and the previous application cannot read it, stop and restore the pre-upgrade database backup before rolling back the application.
+If the failure is application-only, return to the previous release tag and rebuild. If the new version changed the database and the previous application cannot read it, restore the pre-upgrade database backup before starting the old application.
 
 ```bash
 git checkout <previous-release-tag>
 docker compose down
 docker compose up --build -d --wait
 ```
+
+`docker compose down` removes the container and network but keeps the `ding-data` volume. Never add `-v` here: `docker compose down -v` deletes the database volume.
 
 Database restores are described in [Backup and Restore](BACKUP_AND_RESTORE.md).
 
