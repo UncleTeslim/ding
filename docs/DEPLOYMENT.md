@@ -25,6 +25,7 @@ DING_ADMIN_USERNAME=admin
 DING_ADMIN_PASSWORD_HASH=...
 DING_JWT_SECRET=...
 DING_IP_SALT=...
+DING_BASE_URL=https://ding.example.com
 DING_DB_PATH=/app/data/ding.db
 DING_TRUST_PROXY=false
 PORT=3000
@@ -52,6 +53,8 @@ Expected response:
 ## 3. Configure a Reverse Proxy
 
 Ding expects HTTPS to be handled by your reverse proxy.
+
+Set `DING_BASE_URL` to the public HTTPS origin that users and browsers should trust. The server rejects non-HTTPS values in production.
 
 Keep `DING_TRUST_PROXY=false` unless the immediate connection into Express comes from a trusted local/private proxy hop. If you do enable it, `true` is treated as `loopback`; `loopback`, `linklocal`, and `uniquelocal` are also accepted.
 
@@ -107,7 +110,19 @@ docker compose up -d
 
 For busier installations, use SQLite online backup tooling or snapshot the volume at the infrastructure layer.
 
-## 6. Upgrades
+## 6. Restore
+
+To restore a backup, stop Ding, replace the SQLite file or volume contents with the backup copy, then start the service again:
+
+```bash
+docker compose stop
+cp /path/to/backups/ding-2026-07-30.db /path/to/ding.db
+docker compose up -d
+```
+
+After restore, confirm the dashboard loads and `/health` reports `ok`.
+
+## 7. Upgrades
 
 ```bash
 git pull
@@ -116,10 +131,11 @@ docker compose up --build -d
 
 Migrations run automatically on startup.
 
-## 7. Operational Checks
+## 8. Operational Checks
 
 - Confirm `/health` returns `ok`.
 - Confirm the admin dashboard loads.
 - Confirm `/widget.js` returns JavaScript.
 - Confirm the widget appears in a test page.
 - Confirm announcements remain after container restart.
+- Confirm `DING_BASE_URL` matches the public HTTPS origin.
