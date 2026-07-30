@@ -1,5 +1,7 @@
 # API Reference
 
+> [Ding docs](README.md) · [Deployment](DEPLOYMENT.md) · [Backup and restore](BACKUP_AND_RESTORE.md) · [Upgrading](UPGRADING.md) · [Troubleshooting](TROUBLESHOOTING.md) · **API**
+
 All responses use JSON unless the endpoint returns `204 No Content`.
 
 ## Public Endpoints
