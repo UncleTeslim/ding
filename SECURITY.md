@@ -26,6 +26,8 @@ Please avoid sharing exploit code publicly before a fix is available.
 - Cookies use `SameSite=Strict`.
 - Cookies are marked `Secure` when `NODE_ENV=production`.
 - Production refuses missing admin credentials, weak development values for `DING_JWT_SECRET` and `DING_IP_SALT`, the known development password, and non-HTTPS `DING_BASE_URL`.
+- Dashboard and non-public HTML responses include a restrictive Content-Security-Policy and Permissions-Policy.
+- Widget responses use cross-origin resource policy intentionally so host applications can embed the widget.
 - Public widget endpoints are intentionally cross-origin.
 - Admin APIs are same-origin and require the session cookie.
 - Analytics store keyed IP hashes, not raw IP addresses.

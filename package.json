@@ -12,7 +12,7 @@
   "scripts": {
     "build": "npm run build -w @ding/widget && npm run build -w @ding/dashboard && npm run build -w @ding/server",
     "dev": "concurrently -n server,dashboard,widget -c blue,green,magenta \"npm run dev -w @ding/server\" \"npm run dev -w @ding/dashboard\" \"npm run dev -w @ding/widget\"",
-    "test": "npm run test -w @ding/server && npm run test -w @ding/widget && npm run test -w @ding/dashboard",
+    "test": "node --test scripts/setup.test.mjs && npm run test -w @ding/server && npm run test -w @ding/widget && npm run test -w @ding/dashboard",
     "typecheck": "tsc -p packages/widget/tsconfig.json --noEmit && tsc -p packages/dashboard/tsconfig.json --noEmit && tsc -p packages/server/tsconfig.json --noEmit",
     "check:size": "npm run check:size -w @ding/widget",
     "coverage": "npm run coverage -w @ding/server && npm run coverage -w @ding/widget",

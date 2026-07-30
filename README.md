@@ -6,7 +6,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT">
-  <img src="https://img.shields.io/badge/bundle-4.2%20KB%20gzipped-6366f1" alt="Bundle size">
+  <img src="https://img.shields.io/badge/bundle-under%206%20KB%20gzipped-6366f1" alt="Bundle size">
 </p>
 
 Ding is an open source, self-hosted changelog widget for web applications. It gives product teams a clean admin dashboard for publishing updates, and gives users a small in-app widget for reading what changed without leaving the product.
@@ -50,7 +50,7 @@ For production, run:
 npm run setup
 ```
 
-This creates a `.env` file with a bcrypt password hash, JWT secret, and IP hashing salt.
+This interactively creates a `.env` file with a bcrypt password hash, JWT secret, IP hashing salt, and the public HTTPS URL used by the deployment. Review the generated file before starting the service.
 
 ## Embed Code
 
@@ -105,12 +105,11 @@ In production, Ding refuses missing admin credentials, weak development secrets,
 ## Docker
 
 ```bash
-cp .env.example .env
 npm run setup
 docker compose up --build
 ```
 
-The container listens on port `3000` and stores SQLite data in the `ding-data` volume.
+The setup prompt requires the public HTTPS origin. The container listens on port `3000` and stores the embedded SQLite database in the persistent `ding-data` Docker volume. No separate database service is required.
 
 ## Architecture
 
@@ -133,6 +132,7 @@ Server startup, static assets, maintenance jobs, repositories, and domain servic
 - Production rejects missing admin credentials, weak JWT/IP secrets, the known development password, and non-HTTPS base URLs
 - The widget can be embedded cross-origin, while admin routes remain same-origin
 - Backups should be taken from the SQLite file or Docker volume before upgrades
+- Operational procedures are documented in [deployment](docs/DEPLOYMENT.md), [backup and restore](docs/BACKUP_AND_RESTORE.md), [upgrades](docs/UPGRADING.md), and [troubleshooting](docs/TROUBLESHOOTING.md)
 
 Read [SECURITY.md](SECURITY.md) for security guidance and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production setup.
 
@@ -147,7 +147,7 @@ npm test
 npm run check:size
 ```
 
-The widget bundle must remain under 25KB gzipped. The current build is far below that limit.
+The widget bundle must remain under 6 KB gzipped. The current build is approximately 5.4 KB gzipped.
 
 ## License
 

@@ -56,6 +56,22 @@ describe("server", () => {
     expect(res.headers["permissions-policy"]).toContain("camera=()");
   });
 
+  it("sets CSP on successful non-API responses", async () => {
+    const fresh = await loadFreshApp();
+    closeDb = fresh.closeDb;
+    const res = await request(fresh.app).get("/health").expect(200);
+    expect(res.headers["content-security-policy"]).toContain("default-src 'self'");
+    expect(res.headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+  });
+
+  it("keeps public API responses free of dashboard CSP", async () => {
+    const fresh = await loadFreshApp();
+    closeDb = fresh.closeDb;
+    const res = await request(fresh.app).get("/api/announcements").expect(200);
+    expect(res.headers["content-security-policy"]).toBeUndefined();
+    expect(res.headers["cross-origin-resource-policy"]).toBe("same-origin");
+  });
+
   it("logs in and creates an announcement", async () => {
     const fresh = await loadFreshApp();
     closeDb = fresh.closeDb;
