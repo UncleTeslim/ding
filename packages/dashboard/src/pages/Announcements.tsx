@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, isUnauthorized } from "../api/client";
 import { useCountUp } from "../hooks/useCountUp";
@@ -19,10 +19,14 @@ function relativeTime(value: string | null): string {
   return "just now";
 }
 
-function ctrClass(ctr: number): string {
-  if (ctr >= 30) return "ctr-high";
-  if (ctr >= 15) return "ctr-mid";
-  return "";
+type Filter = "all" | "published" | "draft";
+
+function ArrowUpRight() {
+  return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 15 15 5m-7 0h7v7" /></svg>;
+}
+
+function MoreIcon() {
+  return <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4" cy="10" r="1" /><circle cx="10" cy="10" r="1" /><circle cx="16" cy="10" r="1" /></svg>;
 }
 
 export function Announcements() {
@@ -32,6 +36,8 @@ export function Announcements() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [filter, setFilter] = useState<Filter>("all");
+  const [query, setQuery] = useState("");
 
   async function load() {
     setLoading(true);
@@ -92,97 +98,166 @@ export function Announcements() {
 
   const animatedPublished = useCountUp(published);
   const animatedDrafts = useCountUp(drafts);
-  const animatedViews = useCountUp(totalViews);
-  const animatedCtr = useCountUp(overallCtr);
   const viewSeries = daily.map((point) => point.views);
+  const weekViews = daily.reduce((sum, point) => sum + point.views, 0);
+  const weekClicks = daily.reduce((sum, point) => sum + point.clicks, 0);
+  const topAnnouncement = [...announcements]
+    .filter((announcement) => announcement.status === "published")
+    .sort((a, b) => b.analytics.views - a.analytics.views)[0];
+  const filteredAnnouncements = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return announcements.filter((announcement) => {
+      const matchesFilter = filter === "all" || announcement.status === filter;
+      const matchesQuery = !normalizedQuery || `${announcement.title} ${announcement.body} ${announcement.tag ?? ""}`.toLowerCase().includes(normalizedQuery);
+      return matchesFilter && matchesQuery;
+    });
+  }, [announcements, filter, query]);
 
   return (
-    <section>
-      <div className="page-header">
+    <section className="dashboard-page">
+      <div className="page-header dashboard-header">
         <div>
-          <h1>Announcements</h1>
-          <p>Write clearly, publish carefully, and see what readers open.</p>
+          <span className="eyebrow">Overview</span>
+          <h1>Your changelog, at a glance.</h1>
+          <p>See what is resonating and keep your next update moving.</p>
         </div>
-        <Link className="primary link-button" to="/new">New announcement</Link>
+        <Link className="primary link-button header-cta" to="/new">
+          <span>New announcement</span>
+          <ArrowUpRight />
+        </Link>
       </div>
 
-      <div className="metric-grid">
-        <div className="metric">
-          <span>Published</span>
-          <strong>{animatedPublished}</strong>
-        </div>
-        <div className="metric">
-          <span>Drafts</span>
-          <strong>{animatedDrafts}</strong>
-        </div>
-        <div className="metric metric-with-spark">
-          <span>Total views</span>
-          <strong>{animatedViews}</strong>
-          {viewSeries.length > 1 ? <Sparkline data={viewSeries} /> : null}
-        </div>
-        <div className="metric">
-          <span>Overall CTR</span>
-          <strong className={ctrClass(overallCtr)}>{totalViews ? `${animatedCtr.toFixed(1)}%` : "-"}</strong>
+      <div className="signal-grid">
+        <article className="signal-card">
+          <div className="signal-topline">
+            <div>
+              <span className="signal-kicker"><i /> Live signal</span>
+              <h2>Reach this week</h2>
+            </div>
+            <span className="signal-period">Last 7 days</span>
+          </div>
+          <div className="signal-total">
+            <strong>{weekViews.toLocaleString()}</strong>
+            <span>views across your changelog</span>
+          </div>
+          <div className="signal-chart" aria-label={`${weekViews} views over the last 7 days`}>
+            {viewSeries.length > 1 && weekViews > 0 ? <Sparkline data={viewSeries} width={560} height={104} /> : (
+              <div className="chart-placeholder"><span>Activity will appear here as readers discover your updates.</span></div>
+            )}
+          </div>
+          <div className="signal-footer">
+            <span><small>Interactions</small><strong>{weekClicks.toLocaleString()}</strong></span>
+            <span><small>Overall click rate</small><strong>{totalViews ? `${overallCtr}%` : "—"}</strong></span>
+            <span><small>Published</small><strong>{published}</strong></span>
+          </div>
+        </article>
+
+        <div className="dashboard-sidecards">
+          <article className="metric spotlight-metric">
+            <div className="metric-heading"><span>Published</span><i className="metric-icon metric-icon-purple">↗</i></div>
+            <strong>{animatedPublished}</strong>
+            <p>{published === 1 ? "update is" : "updates are"} live for your users</p>
+          </article>
+          <article className="metric">
+            <div className="metric-heading"><span>Drafts</span><i className="metric-icon metric-icon-amber">✦</i></div>
+            <strong>{animatedDrafts}</strong>
+            <p>{drafts ? "Waiting for their finishing touch" : "Everything is shipped"}</p>
+          </article>
+          <article className="top-story-card">
+            <span className="eyebrow">Top performer</span>
+            {topAnnouncement ? (
+              <>
+                <h3>{topAnnouncement.title}</h3>
+                <div className="top-story-stats">
+                  <span><strong>{topAnnouncement.analytics.views}</strong> views</span>
+                  <span><strong>{topAnnouncement.analytics.ctr.toFixed(1)}%</strong> CTR</span>
+                </div>
+                <Link to={`/edit/${topAnnouncement.id}`}>View announcement <ArrowUpRight /></Link>
+              </>
+            ) : (
+              <><h3>Your standout update will appear here.</h3><Link to="/new">Create your first <ArrowUpRight /></Link></>
+            )}
+          </article>
         </div>
       </div>
 
       {error ? <div className="error">{error}</div> : null}
-      {loading ? <div className="empty">Loading...</div> : null}
+      {loading ? <div className="empty dashboard-loading">Gathering your latest signals...</div> : null}
       {!loading && announcements.length === 0 ? (
-        <div className="empty">
-          <p>You haven't published anything yet. Write your first announcement.</p>
-          <Link className="primary link-button" to="/new">Write announcement</Link>
+        <div className="empty empty-dashboard">
+          <span className="empty-bell">◌</span>
+          <h2>It is quiet here—for now.</h2>
+          <p>Turn your next product improvement into an update your users will notice.</p>
+          <Link className="primary link-button" to="/new">Write your first announcement</Link>
         </div>
       ) : null}
 
       {!loading && announcements.length ? (
-        <div className="table-wrap surface">
+        <section className="announcements-section">
+          <div className="section-heading">
+            <div><h2>Announcements</h2><span>{announcements.length} total</span></div>
+            <div className="announcement-tools">
+              <label className="search-box">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" /><path d="m13 13 4 4" /></svg>
+                <span className="sr-only">Search announcements</span>
+                <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search updates" />
+              </label>
+              <div className="filter-tabs" aria-label="Filter announcements">
+                {(["all", "published", "draft"] as Filter[]).map((item) => (
+                  <button key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>{item === "all" ? "All" : item === "draft" ? "Drafts" : "Published"}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {selectedIds.size > 0 ? (
             <div className="bulk-bar">
               <span>{selectedIds.size} selected</span>
               <button className="danger-text" onClick={bulkRemove}>Delete selected</button>
             </div>
           ) : null}
-          <table>
-            <thead>
-              <tr>
-                <th><input type="checkbox" onChange={(event) => setSelectedIds(event.target.checked ? new Set(announcements.map((announcement) => announcement.id)) : new Set())} checked={announcements.length > 0 && selectedIds.size === announcements.length} /></th>
-                <th>Status</th>
-                <th>Title</th>
-                <th>Tag</th>
-                <th>Date</th>
-                <th>Views</th>
-                <th>Clicks</th>
-                <th>CTR</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {announcements.map((announcement) => (
-                <tr key={announcement.id} className="clickable-row" onClick={() => navigate(`/edit/${announcement.id}`)}>
-                  <td onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={selectedIds.has(announcement.id)} onChange={() => toggleSelected(announcement.id)} /></td>
-                  <td><span className={`status ${announcement.status}`}>{announcement.status}</span></td>
-                  <td className="title-cell">
-                    <div>{announcement.title}</div>
-                    <span>{announcement.body.slice(0, 110)}{announcement.body.length > 110 ? "..." : ""}</span>
-                  </td>
-                  <td>{announcement.tag || "-"}</td>
-                  <td title={formatShortDate(announcement.published_at)}>{relativeTime(announcement.published_at)}</td>
-                  <td>{announcement.analytics.views}</td>
-                  <td>{announcement.analytics.clicks}</td>
-                  <td className={ctrClass(announcement.analytics.ctr)}>{announcement.analytics.views ? `${announcement.analytics.ctr.toFixed(1)}%` : "-"}</td>
-                  <td>
-                    <div className="row-actions" onClick={(event) => event.stopPropagation()}>
-                      <Link to={`/edit/${announcement.id}`}>Edit</Link>
-                      <button className="text-button" onClick={() => toggle(announcement)}>{announcement.status === "published" ? "Unpublish" : "Publish"}</button>
-                      <button className="danger-text" onClick={() => remove(announcement)}>Delete</button>
+
+          <div className="announcement-list surface">
+            <div className="list-head">
+              <label className="select-all"><input type="checkbox" aria-label="Select all announcements" onChange={(event) => setSelectedIds(event.target.checked ? new Set(filteredAnnouncements.map((announcement) => announcement.id)) : new Set())} checked={filteredAnnouncements.length > 0 && filteredAnnouncements.every((announcement) => selectedIds.has(announcement.id))} /><span>Update</span></label>
+              <span>Engagement</span><span>Published</span><span className="sr-only">Actions</span>
+            </div>
+            {filteredAnnouncements.length ? filteredAnnouncements.map((announcement) => (
+              <article key={announcement.id} className="announcement-row" onClick={() => navigate(`/edit/${announcement.id}`)}>
+                <div className="announcement-main">
+                  <input aria-label={`Select ${announcement.title}`} type="checkbox" checked={selectedIds.has(announcement.id)} onChange={() => toggleSelected(announcement.id)} onClick={(event) => event.stopPropagation()} />
+                  <span className={`announcement-marker ${announcement.status}`} />
+                  <div>
+                    <div className="announcement-title-line">
+                      <h3>{announcement.title}</h3>
+                      <span className={`status ${announcement.status}`}>{announcement.status}</span>
+                      {announcement.tag ? <span className="tag-chip">{announcement.tag}</span> : null}
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    <p>{announcement.body.slice(0, 120)}{announcement.body.length > 120 ? "…" : ""}</p>
+                  </div>
+                </div>
+                <div className="engagement-cell">
+                  <strong>{announcement.analytics.views.toLocaleString()}</strong>
+                  <span>{announcement.analytics.views ? `${announcement.analytics.ctr.toFixed(1)}% click rate` : "No views yet"}</span>
+                </div>
+                <div className="date-cell" title={formatShortDate(announcement.published_at)}>
+                  <strong>{relativeTime(announcement.published_at)}</strong>
+                  <span>{announcement.status === "published" ? "Live" : "Not published"}</span>
+                </div>
+                <details className="row-menu" onClick={(event) => event.stopPropagation()}>
+                  <summary aria-label={`Actions for ${announcement.title}`}><MoreIcon /></summary>
+                  <div>
+                    <Link to={`/edit/${announcement.id}`}>Edit</Link>
+                    <button onClick={() => toggle(announcement)}>{announcement.status === "published" ? "Unpublish" : "Publish"}</button>
+                    <button className="danger-text" onClick={() => remove(announcement)}>Delete</button>
+                  </div>
+                </details>
+              </article>
+            )) : (
+              <div className="no-results"><strong>No updates found</strong><span>Try another search or status filter.</span><button onClick={() => { setQuery(""); setFilter("all"); }}>Clear filters</button></div>
+            )}
+          </div>
+        </section>
       ) : null}
     </section>
   );

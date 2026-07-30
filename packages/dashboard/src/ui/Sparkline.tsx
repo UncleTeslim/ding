@@ -24,7 +24,8 @@ export function Sparkline({ data, color = "var(--primary)", width = 120, height 
   const last = coords[coords.length - 1];
 
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} fill="none" preserveAspectRatio="none">
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} fill="none" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="0" y1={height - 1} x2={width} y2={height - 1} stroke="currentColor" opacity="0.12" />
       <polygon points={areaPoints} fill={color} opacity={0.1} />
       <polyline points={linePoints} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
       <circle cx={last.x} cy={last.y} r={2.5} fill={color} />
