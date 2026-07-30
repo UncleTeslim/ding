@@ -50,7 +50,7 @@ For production, run:
 npm run setup
 ```
 
-This creates a `.env` file with a bcrypt password hash, JWT secret, and IP hashing salt.
+This creates a `.env` file with a bcrypt password hash, JWT secret, IP hashing salt, and an HTTPS `DING_BASE_URL`.
 
 ## Embed Code
 
