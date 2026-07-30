@@ -94,12 +94,13 @@ For local testing, use:
 | `DING_ADMIN_PASSWORD_HASH` | Yes | Bcrypt hash of the admin password |
 | `DING_JWT_SECRET` | Yes | Secret used to sign admin session cookies |
 | `DING_IP_SALT` | Yes | Salt used before hashing IP addresses |
+| `DING_BASE_URL` | Yes in production | Public HTTPS origin used for CSRF and canonical URL checks |
 | `DING_DB_PATH` | No | SQLite file path. Defaults to `./data/ding.db` |
 | `DING_TRUST_PROXY` | No | Defaults to `false`. Use `true` only when the immediate proxy hop is trusted; `true` maps to Express' `loopback` trust setting. |
 | `PORT` | No | Server port. Defaults to `3000` |
 | `NODE_ENV` | No | Use `production` in production |
 
-In production, Ding refuses missing admin credentials, weak development secrets, the known development password, and non-HTTPS `DING_BASE_URL` values.
+In production, Ding refuses missing admin credentials, weak development secrets, the known development password, and non-HTTPS `DING_BASE_URL` values. Set `DING_BASE_URL` to the public HTTPS origin before deploying.
 
 ## Docker
 
@@ -131,6 +132,7 @@ Server startup, static assets, maintenance jobs, repositories, and domain servic
 - Raw IP addresses are not stored
 - Production rejects missing admin credentials, weak JWT/IP secrets, the known development password, and non-HTTPS base URLs
 - The widget can be embedded cross-origin, while admin routes remain same-origin
+- Backups should be taken from the SQLite file or Docker volume before upgrades
 
 Read [SECURITY.md](SECURITY.md) for security guidance and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production setup.
 
