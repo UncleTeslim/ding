@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide describes a practical production deployment for Ding.
+This guide describes a practical production deployment for Ding. Ding runs as one application container and stores its embedded SQLite database in a persistent Docker volume; no separate database service is required.
 
 ## 1. Prepare the Environment
 
@@ -17,6 +17,8 @@ Create production secrets:
 npm install
 npm run setup
 ```
+
+The setup command asks for the admin credentials and the public HTTPS URL. Do not start production until the generated `.env` has been reviewed.
 
 Review the generated `.env` file:
 
@@ -35,7 +37,7 @@ NODE_ENV=production
 ## 2. Run with Docker Compose
 
 ```bash
-docker compose up --build -d
+docker compose up --build -d --wait
 ```
 
 By default, Compose publishes Ding on `127.0.0.1:3000`, so it is reachable to a local reverse proxy but not directly exposed to the public internet. Check health:
@@ -98,38 +100,15 @@ After the instance is reachable over HTTPS, embed:
 
 ## 5. Backups
 
-Ding stores data in SQLite. Back up the Docker volume or the database file at the path configured by `DING_DB_PATH`.
-
-A simple backup routine is enough for most v1 deployments:
-
-```bash
-docker compose stop
-cp /path/to/ding.db /path/to/backups/ding-$(date +%Y-%m-%d).db
-docker compose up -d
-```
-
-For busier installations, use SQLite online backup tooling or snapshot the volume at the infrastructure layer.
+Ding stores data in SQLite. Back up the persistent Docker volume before upgrades. See [Backup and Restore](BACKUP_AND_RESTORE.md) for tested volume commands and recovery checks.
 
 ## 6. Restore
 
-To restore a backup, stop Ding, replace the SQLite file or volume contents with the backup copy, then start the service again:
-
-```bash
-docker compose stop
-cp /path/to/backups/ding-2026-07-30.db /path/to/ding.db
-docker compose up -d
-```
-
-After restore, confirm the dashboard loads and `/health` reports `ok`.
+See [Backup and Restore](BACKUP_AND_RESTORE.md). Always stop Ding before replacing a SQLite file and verify `/health` and the dashboard after starting it again.
 
 ## 7. Upgrades
 
-```bash
-git pull
-docker compose up --build -d
-```
-
-Migrations run automatically on startup.
+See [Upgrading](UPGRADING.md). Back up the database before applying a new release; migrations run automatically on startup.
 
 ## 8. Operational Checks
 
@@ -139,3 +118,8 @@ Migrations run automatically on startup.
 - Confirm the widget appears in a test page.
 - Confirm announcements remain after container restart.
 - Confirm `DING_BASE_URL` matches the public HTTPS origin.
+- Review `docker compose logs ding` if any check fails.
+
+## 9. Troubleshooting
+
+See [Troubleshooting](TROUBLESHOOTING.md) for startup, reverse proxy, login, widget, volume, and migration issues.

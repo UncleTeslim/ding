@@ -7,7 +7,7 @@
     "dev": "node build.js --watch",
     "test": "vitest run --environment jsdom",
     "coverage": "vitest run --environment jsdom --coverage",
-    "check:size": "gzip-size dist/widget.js --raw --max-size 25000"
+    "check:size": "gzip-size dist/widget.js --raw --max-size 6000"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
