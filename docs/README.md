@@ -10,7 +10,6 @@ Ding is a self-hosted service. These guides explain how to run it, protect its d
 - [Release Ding](RELEASING.md) — publish a versioned GitHub release and GHCR image.
 - [Troubleshoot Ding](TROUBLESHOOTING.md) — find and fix common startup, database, proxy, and widget problems.
 - [API reference](API.md) — integrate with Ding's HTTP endpoints.
-- [PRD deviations](PRD-DEVIATIONS.md) — where the implementation intentionally differs from the product requirements.
 
 ## Recommended order
 

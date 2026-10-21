@@ -4,7 +4,7 @@
 
 ## Before the first release
 
-1. Complete the production and recovery gates in [Launch readiness](LAUNCH_READINESS.md).
+1. Complete a production installation and recovery rehearsal before publishing a supported release.
 2. Update the root and workspace package versions, changelog, and any migration notes.
 3. Confirm the GitHub Actions workflow has permission to publish packages. Check the GHCR package visibility after the first run and make it public if the release is intended for public pulls.
 4. Merge the release commit to the default branch and ensure CI passes.
