@@ -16,6 +16,15 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm audit --audit-level=high
+      - name: Restore Rollup Linux native package
+        shell: bash
+        run: |
+          ROLLUP_VERSION="$(node -p 'require("./node_modules/rollup/package.json").version')"
+          ROLLUP_PACKAGE="@rollup/rollup-linux-x64-gnu"
+          ROLLUP_ARCHIVE="$(npm pack "${ROLLUP_PACKAGE}@${ROLLUP_VERSION}" --silent)"
+          mkdir -p "node_modules/${ROLLUP_PACKAGE}"
+          tar -xzf "$ROLLUP_ARCHIVE" --strip-components=1 -C "node_modules/${ROLLUP_PACKAGE}"
+          rm "$ROLLUP_ARCHIVE"
       - run: npm run build
       - run: npm test
       - run: npm run coverage
