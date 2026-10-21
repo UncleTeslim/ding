@@ -4,6 +4,8 @@
 
 ## Before the first release
 
+`0.1.0` will establish the first supported-version baseline. Test upgrades when the next supported version is prepared.
+
 1. Complete a production installation and recovery rehearsal before publishing a supported release.
 2. Update the root and workspace package versions, changelog, and any migration notes.
 3. Confirm the GitHub Actions workflow has permission to publish packages. Check the GHCR package visibility after the first run and make it public if the release is intended for public pulls.
@@ -13,14 +15,14 @@
 
 ### Test a release candidate
 
-Before the first supported release, publish a candidate such as `v0.1.0-rc.1` to verify the workflow and clean-machine install. The release is marked as a prerelease, and the image is published as `ghcr.io/uncleteslim/ding:0.1.0-rc.1`; it does not make stable `0.1.0` an official supported release.
+Before the first supported release, publish a candidate such as `v0.1.0-rc.2` to verify the workflow and clean-machine install. The release is marked as a prerelease, and the image is published as `ghcr.io/uncleteslim/ding:0.1.0-rc.2`; it does not make stable `0.1.0` an official supported release.
 
 ```bash
-git tag -a v0.1.0-rc.1 -m "Ding 0.1.0 release candidate 1"
-git push origin v0.1.0-rc.1
+git tag -a v0.1.0-rc.2 -m "Ding 0.1.0 release candidate 2"
+git push origin v0.1.0-rc.2
 ```
 
-The workflow accepts `-rc.N` prerelease tags and publishes only their exact versioned image tag. Verify the Actions run, prerelease status, GHCR visibility, and a clean-machine pull/install. Fixes require a new candidate tag, such as `v0.1.0-rc.2`; do not move or reuse a tag.
+The workflow accepts `-rc.N` prerelease tags and publishes only their exact versioned image tag. Verify the Actions run, prerelease status, GHCR visibility, and a clean-machine pull/install. Fixes require a new candidate tag, such as `v0.1.0-rc.3`; do not move or reuse a tag.
 
 ### Publish the supported release
 
@@ -37,7 +39,7 @@ The current `0.1.0` package versions are candidates only. A release candidate do
 
 ## Install a published image
 
-Copy `.env.example` to `.env`, set secure production credentials and the public HTTPS URL as described in [Deployment](DEPLOYMENT.md), then set `DING_IMAGE` to the exact published version:
+Follow [Production installation](DEPLOYMENT.md) to pull the exact image and generate a new production `.env` using its included setup helper. Preserve an existing instance's configuration. Set `DING_IMAGE` to the exact version actually published; the stable version below is an example, not a claim of availability:
 
 ```dotenv
 DING_IMAGE=ghcr.io/uncleteslim/ding:0.1.0

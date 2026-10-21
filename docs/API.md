@@ -1,113 +1,146 @@
-# API Reference
+# API reference
 
-> [Ding docs](README.md) · [Deployment](DEPLOYMENT.md) · [Backup and restore](BACKUP_AND_RESTORE.md) · [Upgrading](UPGRADING.md) · [Troubleshooting](TROUBLESHOOTING.md) · **API**
+These endpoints describe the current server. Paths are relative to your Ding instance, for example `https://updates.example.com`. Successful responses are JSON unless noted; parser-level errors may use Express's default non-JSON error response. Announcement IDs are 16-character lowercase hexadecimal strings; dates are UTC and may be serialized as ISO timestamps or SQLite's `YYYY-MM-DD HH:mm:ss` UTC form.
 
-All responses use JSON unless the endpoint returns `204 No Content`.
+The widget uses the public API. Admin endpoints use the dashboard session cookie; API tokens and a dedicated publishing automation API are not available.
 
-## Public Endpoints
+## Health and static assets
+
+| Method / path | Result |
+| --- | --- |
+| `GET /health` | `200 {"ok":true,"db":"connected"}`, or `503` if SQLite is unavailable |
+| `GET /widget.js` | Browser widget JavaScript; cached for up to 300 seconds |
+
+A successful health check proves connectivity to SQLite, not that a particular announcement survived a restart.
+
+## Published announcements
 
 ### `GET /api/announcements`
 
-Returns published announcements, newest first.
+Returns at most the 50 most recent published announcements, newest publication date first. Drafts are excluded. The widget panel displays up to 20 items from this feed. Responses carry `Cache-Control: public, max-age=30`.
 
 ```json
 {
   "announcements": [
     {
       "id": "a1b2c3d4e5f6a7b8",
-      "title": "Dark mode is here",
-      "body": "We've shipped **dark mode**.",
-      "tag": "New Feature",
-      "published_at": "2026-04-12T09:00:00.000Z"
+      "title": "Find invoices faster",
+      "body": "Filter invoices by **date** in Billing.",
+      "tag": "Improvement",
+      "published_at": "2026-10-21 09:00:00"
     }
   ]
 }
 ```
 
-### `POST /api/analytics/view`
+Read this endpoint from your app without sending admin credentials:
 
-Records that an announcement was visible when the widget panel opened.
-
-```json
-{
-  "announcement_id": "a1b2c3d4e5f6a7b8"
-}
+```bash
+curl --fail https://updates.example.com/api/announcements
 ```
 
-Returns `204`.
+## Widget analytics
 
-Malformed or unknown announcement IDs are ignored and also return `204`.
+### `POST /api/analytics/view` and `POST /api/analytics/click`
 
-### `POST /api/analytics/click`
-
-Records that a user expanded an announcement.
+Both accept:
 
 ```json
-{
-  "announcement_id": "a1b2c3d4e5f6a7b8"
-}
+{"announcement_id":"a1b2c3d4e5f6a7b8"}
 ```
 
-Returns `204`.
+A view records feed exposure reported when the panel opens; a click represents expansion, not a link click. The current widget sends view events for its loaded feed, including entries beyond the panel's 20-item display limit, so a view is not proof an individual item was read. Valid requests return `204 No Content`. Requests with invalid/missing IDs in otherwise valid JSON, unknown IDs, or draft IDs are ignored and also return `204`; that status does not prove an event was stored.
 
-Malformed or unknown announcement IDs are ignored and also return `204`.
+Events deduplicate per announcement, event type and hashed IP over a rolling 24-hour window. The limiter allows 10 requests per hour per IP, announcement and event route; further requests return `429`. Event bodies have a 1 KB JSON limit. Malformed JSON can return `400`, and oversized bodies `413`.
 
-## Auth Endpoints
+Public reads and analytics support cross-origin use. Browser admin access remains tied to the instance origin.
 
-### `POST /api/auth/login`
+## Authentication
+
+| Method / path | Success | Common errors |
+| --- | --- | --- |
+| `POST /api/auth/login` | `200 {"ok":true}` plus `ding_session` cookie | `400` invalid input, `401` wrong credentials, `403` foreign browser origin, `429` rate limit |
+| `GET /api/auth/me` | `200 {"username":"admin"}` | `401` unauthenticated |
+| `POST /api/auth/logout` | `200 {"ok":true}`; clears cookie and revokes the valid token server-side | `403` foreign browser origin |
+
+Login body:
 
 ```json
-{
-  "username": "admin",
-  "password": "password"
-}
+{"username":"your-admin-username","password":"your-admin-password"}
 ```
 
-Sets the `ding_session` HTTP-only cookie.
+Sessions expire after seven days. The cookie is HTTP-only, `SameSite=Strict`, and `Secure` in production. Login is limited to 10 requests per IP per hour, including successful logins.
 
-### `POST /api/auth/logout`
+Authenticated endpoints send `Cache-Control: no-store`. Mutating auth/admin requests reject a foreign browser `Origin` with `403 {"error":"Cross-site request blocked"}`. Clients without an `Origin` still require valid credentials/session cookies. Do not expose these credentials in browser embeds or build a cross-origin admin frontend around them.
 
-Clears the `ding_session` cookie and revokes the JWT server-side, so the token can no longer be used even if replayed.
+## Announcement administration
 
-## Admin Endpoints
+All routes below require `ding_session`.
 
-All admin endpoints require a valid `ding_session` cookie.
-Browser requests with a foreign `Origin` are rejected for mutating admin actions.
+| Method / path | Success |
+| --- | --- |
+| `GET /api/admin/announcements` | `200 {"announcements":[...]}`; drafts and published records, each with `analytics: {"views":0,"clicks":0,"ctr":0}` |
+| `GET /api/admin/announcements/:id` | `200 {"announcement":{...}}`, or `404` |
+| `POST /api/admin/announcements` | `201 {"announcement":{...}}` |
+| `PUT /api/admin/announcements/:id` | `200 {"announcement":{...}}`, or `404` |
+| `DELETE /api/admin/announcements/:id` | `204 No Content`; also removes associated analytics |
+| `POST /api/admin/announcements/bulk-delete` | `200 {"deleted":2}` for `{"ids":["id1","id2"]}` |
 
-### `GET /api/admin/announcements`
+The bulk result counts the submitted IDs, not necessarily existing records. It accepts 1–100 string IDs. Deletion endpoints do not return `404` for an absent ID.
 
-Returns drafts and published announcements with analytics.
-
-### `GET /api/admin/announcements/:id`
-
-Returns a single announcement by ID.
-
-### `POST /api/admin/announcements`
-
-Creates an announcement.
+Create body:
 
 ```json
 {
-  "title": "Dark mode is here",
-  "body": "We've shipped **dark mode**.",
-  "tag": "New Feature",
-  "status": "published",
+  "title": "Find invoices faster",
+  "body": "Filter invoices by **date** in Billing.",
+  "tag": "Improvement",
+  "status": "draft",
   "published_at": null
 }
 ```
 
-### `PUT /api/admin/announcements/:id`
+| Field | Validation |
+| --- | --- |
+| `title` | Required, trimmed, 1–100 characters |
+| `body` | Required, trimmed, 1–5,000 characters |
+| `tag` | Optional/null, trimmed, up to 50 characters |
+| `status` | Required on create: `draft` or `published` |
+| `published_at` | Optional/null, ISO date-time ending in `Z`; future dates rejected |
 
-Updates an announcement. Send only the fields that changed.
+Updates accept any subset of those fields. Creating a published record with no date assigns the current time. When changing a draft to published, omit `published_at` to assign the current time; an explicit `null` on an update is stored as null. There is no future scheduler. Validation failures return `400` with `error` and `issues`. JSON bodies for these endpoints have a 64 KB limit.
 
-### `DELETE /api/admin/announcements/:id`
-
-Deletes an announcement and its analytics events.
+## Admin analytics
 
 ### `GET /api/admin/analytics`
 
-Returns aggregate views, clicks, and CTR.
+Returns retained events for currently published announcements:
+
+```json
+{
+  "summary": {
+    "total_views": 10,
+    "total_clicks": 2,
+    "overall_ctr": 20
+  },
+  "by_announcement": [
+    {
+      "announcement_id": "a1b2c3d4e5f6a7b8",
+      "title": "Find invoices faster",
+      "views": 10,
+      "clicks": 2,
+      "ctr": 20
+    }
+  ]
+}
+```
+
+### `GET /api/admin/analytics/daily`
+
+Returns `{"daily":[{"date":"2026-10-21","views":3,"clicks":1}]}` with seven date entries, including zero-activity dates. Counts are distinct hashed IPs per UTC date/event type across announcements. They are not per-announcement totals or weekly unique people.
 
 ### `DELETE /api/admin/analytics`
 
-Clears all analytics events. Returns `{ "deleted": <count> }`. Useful for a fresh start; it does not delete announcements.
+Clears **all** analytics events and returns `{"deleted":10}` with the removed event count. Announcements remain. This is destructive; make a backup if those events matter.
+
+Events older than 12 months are removed by maintenance. CTR is a percentage, rounded to one decimal place, and zero when there are no views.

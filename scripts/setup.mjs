@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
-import { writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { pathToFileURL } from "node:url";
@@ -25,6 +25,9 @@ export function formatEnvValue(value) {
 }
 
 export async function runSetup({ inputStream = input, outputStream = output, envPath = ".env" } = {}) {
+  if (existsSync(envPath)) {
+    throw new Error(`${envPath} already exists. Keep your current credentials; edit the file directly or move it to a secure backup before running setup again.`);
+  }
   const rl = readline.createInterface({ input: inputStream, output: outputStream });
 
   const username = (await rl.question("Admin username [admin]: ")) || "admin";
@@ -34,6 +37,9 @@ export async function runSetup({ inputStream = input, outputStream = output, env
 
   if (!password.trim()) {
     throw new Error("Admin password is required.");
+  }
+  if (password === "password") {
+    throw new Error("Choose a production password other than the development password 'password'.");
   }
 
   const publicUrl = validatePublicUrl(publicUrlInput);
@@ -51,7 +57,7 @@ export async function runSetup({ inputStream = input, outputStream = output, env
     ""
   ].join("\n");
 
-  writeFileSync(envPath, env, { encoding: "utf8" });
+  writeFileSync(envPath, env, { encoding: "utf8", flag: "wx", mode: 0o600 });
   outputStream.write(`.env written for ${publicUrl}. Review it before starting Docker Compose.\n`);
   return { publicUrl, env };
 }

@@ -1,25 +1,23 @@
-# Ding Documentation
+# Ding documentation
 
-Ding is a self-hosted service. These guides explain how to run it, protect its data, update it, and fix common problems.
+Start with the path that matches your goal:
 
-## Choose a guide
+| Goal | Guide |
+| --- | --- |
+| Deploy your own instance | [Production installation](DEPLOYMENT.md) |
+| Try locally or change the source | [Local development](LOCAL_DEVELOPMENT.md) |
+| Write and publish your first update | [Publishing](PUBLISHING.md) |
+| Add Ding to your app | [Embedding and framework examples](EMBEDDING.md) |
+| Understand settings | [Configuration](CONFIGURATION.md) |
+| Protect and recover data | [Backup and restore](BACKUP_AND_RESTORE.md) |
+| Update an existing instance | [Upgrading](UPGRADING.md) |
+| Diagnose a problem | [Troubleshooting](TROUBLESHOOTING.md) |
+| Use HTTP endpoints | [API reference](API.md) |
 
-- [Deploy Ding](DEPLOYMENT.md) — install Ding locally or on a live server.
-- [Back up and restore](BACKUP_AND_RESTORE.md) — protect announcements and analytics.
-- [Upgrade Ding](UPGRADING.md) — update the app without losing data.
-- [Release Ding](RELEASING.md) — publish a versioned GitHub release and GHCR image.
-- [Troubleshoot Ding](TROUBLESHOOTING.md) — find and fix common startup, database, proxy, and widget problems.
-- [API reference](API.md) — integrate with Ding's HTTP endpoints.
+The [website documentation](https://www.dingwidget.com/docs/introduction/) presents these guides with navigation and copyable examples. The public repository guides are their source of truth.
 
-## Recommended order
+Ding is one service with an embedded SQLite database. Production needs persistent storage and an HTTPS origin; it does not need a separate database server or one Ding instance per visitor. Docker is the recommended deployment path. A static hosting service alone cannot run the backend.
 
-For a new live installation, read [Deploy Ding](DEPLOYMENT.md) first. Before changing or upgrading a working installation, read [Back up and restore](BACKUP_AND_RESTORE.md). If something goes wrong, start with [Troubleshoot Ding](TROUBLESHOOTING.md) and only then use the rollback steps in [Upgrade Ding](UPGRADING.md).
+Commands use Bash unless a PowerShell block is shown. In PowerShell, use `curl.exe` for the curl examples. Values such as `updates.example.com` and `<published-version>` are placeholders to replace.
 
-## A few terms in plain English
-
-- A **container** is the running package that contains Ding.
-- A **volume** is Docker-managed storage that keeps the database after the container is replaced.
-- A **reverse proxy** is the public front door. It handles HTTPS and passes requests to Ding on port `3000`.
-- A **migration** is a small database update that runs when a new Ding version starts.
-
-The commands in these guides use Bash syntax unless a PowerShell version is shown. Docker commands are otherwise the same on Linux, macOS, and Windows Docker Desktop.
+For maintainers: [release procedure](RELEASING.md) and [contributing](../CONTRIBUTING.md).

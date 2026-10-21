@@ -3,7 +3,9 @@
 ## Testing
 
 - [ ] `npm run build`
+- [ ] `npm run typecheck`
 - [ ] `npm test`
+- [ ] `npm run coverage`
 - [ ] `npm run check:size`
 
 ## Checklist

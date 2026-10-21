@@ -26,6 +26,7 @@ COPY --from=builder --chown=node:node /app/packages/server/dist ./packages/serve
 COPY --from=builder --chown=node:node /app/packages/server/src/db/migrations ./packages/server/dist/db/migrations
 COPY --from=builder --chown=node:node /app/packages/dashboard/dist ./packages/dashboard/dist
 COPY --from=builder --chown=node:node /app/packages/widget/dist ./packages/widget/dist
+COPY --chown=node:node scripts/setup.mjs ./scripts/setup.mjs
 COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 USER node
 EXPOSE 3000

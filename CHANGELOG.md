@@ -1,8 +1,12 @@
 # Changelog
 
-## 0.1.0-rc.1 — first supported release candidate
+## Unreleased — preparing 0.1.0
 
-The earlier `0.1.0`, `0.1.1`, and `0.2.0` headings were development milestones, not tagged supported releases. This candidate consolidates those changes into the first supported release line. The stable `0.1.0` release will follow after the launch checks are complete.
+`0.1.0` is planned as the first supported stable release. Earlier numbered development milestones and evaluation candidates did not establish a supported stable release. Check GitHub Releases for artifacts that are actually available to install.
+
+- Reworked the publishing dashboard around reader activity, drafts, search/filtering and widget setup.
+- Updated installation, publishing, framework embedding, API and recovery documentation to match the running product.
+- Included the production setup helper in the Docker image so credentials can be generated without host Node.js; existing `.env` files are protected from overwrite.
 
 - Initial Ding self-hosted in-app announcements MVP.
 - Added drafts, tags, Markdown preview, bulk delete, and per-announcement views, clicks, and click-through rates.

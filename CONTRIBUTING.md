@@ -1,43 +1,49 @@
-# Contributing
+# Contributing to Ding
 
-Thank you for taking interest in Ding. The project aims to stay simple, useful, and pleasant to maintain.
+Start with an issue describing the problem or a focused pull request. Product code and public operating guides live in this repository; the marketing/documentation website has its own private source repository.
 
-## Local Setup
+## Local setup
+
+Use Node.js 22.12+ on the 22.x line or a current Node.js 24 release, npm and Git. See [local development](docs/LOCAL_DEVELOPMENT.md) for native-package requirements and troubleshooting.
 
 ```bash
+git clone https://github.com/UncleTeslim/ding.git
+cd ding
+npm ci
 cp .env.example .env
-npm install
+npm run build
 npm run dev
 ```
 
-The server runs on `http://localhost:3000`. The dashboard dev server runs on `http://localhost:5173`.
+Open `http://localhost:5173` for the dashboard with live reload. The API/widget and last built dashboard run on `http://localhost:3000`. Development credentials are `admin` / `password`. Keep an existing `.env` rather than replacing it.
 
-## Useful Commands
+## Validate a change
 
 ```bash
 npm run build
+npm run typecheck
 npm test
+npm run coverage
 npm run check:size
 ```
 
-## Pull Request Standard
+Coverage gates apply to server and widget code. The widget's enforced budget is 25 KB gzipped; run the size command for the current result instead of copying a stale measurement.
 
-- Keep each pull request focused.
-- Include tests for server or widget behaviour when the behaviour changes.
-- Keep the widget dependency budget tight.
-- Update documentation when a public command, API, option, or deployment step changes.
-- Run the build, tests, and bundle-size check before requesting review.
+## Pull requests
 
-## Design Principles
+- Keep the change focused and explain the user-visible result.
+- Add regression coverage for meaningful behavior changes.
+- Keep widget runtime dependencies small and avoid loading third-party resources.
+- Update the relevant guide when a command, response, option or deployment step changes.
+- Report the checks you actually ran and any limitations.
+- Keep internal planning, credentials, databases, cookies and rehearsal artifacts out of commits.
 
-- The dashboard should feel calm, direct, and operational.
-- The widget should stay polite, fast, and small.
-- Security defaults should favour self-hosters who may be deploying Ding for the first time.
-- Documentation should be clear enough for a careful developer to follow without guesswork.
+## Documentation ownership
 
-## Code Style
+Public guides under `docs/` are the canonical source for matching website pages. Update those here; website maintainers run their `docs:sync` command and commit the generated pages separately. Fix commands and code examples alongside the feature, including expected output and recovery paths.
 
-- Use TypeScript for all packages.
-- Prefer small modules with plain data flow.
-- Keep comments useful and rare.
-- Avoid adding abstractions before there is a real pattern to name.
+## Security and design
+
+Use TypeScript for product code. Prefer small modules with plain data flow. Make errors actionable, preserve drafts when requests fail, and retain confirmation for destructive actions. Test keyboard and narrow-screen behavior when changing the UI.
+
+Report vulnerabilities privately through the [security policy](SECURITY.md), rather than opening a public issue with exploit details.

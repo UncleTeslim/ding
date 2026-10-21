@@ -1,181 +1,156 @@
-# Deployment Guide
+# Production installation
 
-> **Ding docs:** [Home](README.md) · **Deployment** · [Backup and restore](BACKUP_AND_RESTORE.md) · [Upgrading](UPGRADING.md) · [Troubleshooting](TROUBLESHOOTING.md)
+Run one Ding instance for your product, then embed its widget in the apps where users should see your updates. The dashboard, API and widget share one service; SQLite stores announcements, analytics and revoked sessions on disk.
 
-This guide describes a practical production deployment for Ding. Ding runs as one application container and stores its embedded SQLite database in a persistent Docker volume; no separate database service is required.
+## Before you start
 
-For a published, pinned image, follow [Releasing Ding](RELEASING.md) and set `DING_IMAGE` to the exact version before pulling. This guide's default command builds from the checked-out source.
+- A Linux server or container host with Docker Engine and Compose v2. Docker Desktop also works for local rehearsals.
+- Git, internet access for the build/image pull, and persistent storage mounted at `/app/data`.
+- A domain/subdomain such as `updates.example.com`, with DNS pointing to your server.
+- An HTTPS reverse proxy. This guide uses Caddy installed on the host; an existing Nginx or provider-managed HTTPS proxy also works.
 
-The Docker workflow is the same on Linux, macOS, and Windows with Docker Desktop. For a public production server, a small Linux VPS is the simplest choice. macOS and Windows are useful for local testing; only ordinary shell commands such as `mkdir` and `cp` differ.
+Use [Docker's installation guide](https://docs.docker.com/engine/install/) and [Caddy's installation guide](https://caddyserver.com/docs/install) for your operating system. Confirm Docker is running with `docker info` and Compose is available with `docker compose version`.
 
-## What you are setting up
+The steps below use Bash on the server. Host Node.js is optional: the Docker setup command generates credentials inside the image.
 
-- Ding runs in one Docker container.
-- Docker keeps the SQLite database in the `ding-data` volume.
-- The container listens on port `3000`.
-- A reverse proxy such as Caddy or Nginx provides the public HTTPS address and forwards traffic to Ding.
-
-For a local test, you can stop after the health check. For a live deployment, complete the reverse-proxy section before logging in or embedding the widget.
-
-## 1. Prepare the Environment
-
-Install Docker Engine and the Docker Compose plugin on Linux, or Docker Desktop on macOS/Windows. Install Node.js 20 or newer and npm to run `npm run setup`.
-
-On Linux, make sure the Docker daemon is running. On macOS and Windows, start Docker Desktop and wait until it reports that Docker is running. An error mentioning `dockerDesktopLinuxEngine` means the Docker daemon is not reachable.
-
-Clone the repository on the machine that will run Ding:
+## 1. Get the source and choose an image
 
 ```bash
-git clone https://github.com/UncleTeslim/ding
+git clone https://github.com/UncleTeslim/ding.git
 cd ding
 ```
 
-Create production secrets:
+### Build the current source
+
+This path works before a release is published:
 
 ```bash
-npm install
-npm run setup
+docker build -t ding:local .
 ```
 
-The setup command asks for the admin credentials and the public HTTPS URL. It writes values in single-quoted `.env` form, for example `DING_ADMIN_USERNAME='admin'`. This is intentional: Docker Compose treats single-quoted values literally, which preserves the `$` characters in Ding's bcrypt password hash. Do not commit or share `.env`.
+For repeatable deployments, record `git rev-parse HEAD` or check out the release tag you intend to build. Building a new version does not migrate your running database until you start that version.
 
-If you are testing locally without a public HTTPS name, use `.env.example` and `npm run dev` instead. `npm run setup` is intentionally production-only and requires an HTTPS origin.
+### Use a published image
 
-Review the generated `.env` file:
-
-```txt
-DING_ADMIN_USERNAME='admin'
-DING_ADMIN_PASSWORD_HASH='...'
-DING_JWT_SECRET='...'
-DING_IP_SALT='...'
-DING_BASE_URL='https://ding.example.com'
-DING_DB_PATH='./data/ding.db'
-DING_TRUST_PROXY='false'
-PORT='3000'
-NODE_ENV='production'
-```
-
-## 2. Start Ding with Docker Compose
+If [GitHub Releases](https://github.com/UncleTeslim/ding/releases) lists an available version, check its image tag and supported architecture, then pull that exact image. Do not assume an example version exists or that ARM images are published.
 
 ```bash
-docker compose up --build -d --wait
+docker pull 'ghcr.io/uncleteslim/ding:<published-version>'
 ```
 
-By default, Compose publishes Ding on `127.0.0.1:3000`, so it is reachable to a local reverse proxy but not directly exposed to the public internet. Check health:
+Replace `<published-version>` with the published tag without its leading `v`. For the setup command below, substitute this image for `ding:local`. A digest reference, `ghcr.io/uncleteslim/ding@sha256:<digest>`, also pins an image.
+
+## 2. Generate production configuration
+
+Run setup only for a new installation. It refuses to overwrite `.env`; do not regenerate secrets when upgrading an existing instance.
 
 ```bash
-curl http://localhost:3000/health
+docker run --rm -it \
+  --user "$(id -u):$(id -g)" \
+  --mount "type=bind,source=$PWD,target=/setup" \
+  --workdir /setup --entrypoint node \
+  ding:local /app/scripts/setup.mjs
 ```
 
-Expected response:
+The command mounts only this checkout as `/setup`. Enter your admin username, a strong password other than `password`, and the **public HTTPS origin**, for example `https://updates.example.com`. Do not include a path such as `/dashboard`. The current password prompt displays typed characters; use a private terminal.
+
+On Windows with Docker Desktop, run this from PowerShell in the checkout:
+
+```powershell
+docker run --rm -it --mount "type=bind,source=${PWD},target=/setup" --workdir /setup --entrypoint node ding:local /app/scripts/setup.mjs
+```
+
+Alternatively, with Node.js installed, run `npm ci --omit=dev --ignore-scripts` followed by `npm run setup`. This installs the setup helper's dependencies; Docker still builds the running app separately.
+
+Setup writes a bcrypt hash, random secrets and production settings to `.env`. Preserve its single quotes: they keep `$` characters in bcrypt hashes literal when Compose reads the file. Keep `.env` private and save a secure copy separately from the server.
+
+For a published image, add this line to `.env`, using the same exact version/digest you pulled:
+
+```dotenv
+DING_IMAGE='ghcr.io/uncleteslim/ding:<published-version>'
+```
+
+For a source build, leave `DING_IMAGE` unset so Compose uses `ding:local`. Leave the container `PORT=3000`; changing the public/host port is separate. See [configuration](CONFIGURATION.md).
+
+## 3. Start and check Ding
+
+```bash
+docker compose up -d --no-build --wait
+curl --fail http://127.0.0.1:3000/health
+docker compose ps
+```
+
+Expected health response:
 
 ```json
-{ "ok": true, "db": "connected" }
+{"ok":true,"db":"connected"}
 ```
 
-The database is in the named `ding-data` volume. Do not add `:ro` to `/app/data`; SQLite needs to write the database and its temporary companion files. The default Compose file leaves the container root filesystem writable for compatibility across Docker Desktop and Linux. The image still runs as the unprivileged `node` user, drops Linux capabilities, and uses a temporary filesystem for `/tmp`.
+Compose binds `127.0.0.1:3000` on the host and mounts the named `ding-data` volume at `/app/data`. Keep that volume and the same Compose project/directory name when replacing containers. Do not use `docker compose down -v` for maintenance; it deletes the database volume.
 
-Useful checks:
+The internal HTTP listener is useful for health checks. Use the HTTPS origin for production login because the session cookie is `Secure`.
 
-```bash
-docker compose ps
-docker compose logs --tail=200 ding
-```
+## 4. Make the instance reachable over HTTPS
 
-On PowerShell, the same Docker commands work. Use `curl.exe` if PowerShell's `curl` alias produces different output.
+Point the DNS A record (and AAAA only if your host serves IPv6) at your server. Allow inbound TCP 80/443 and keep port 3000 private.
 
-## 3. Configure a Reverse Proxy on a Live Server
+For Caddy installed on the **host**, edit `/etc/caddy/Caddyfile`:
 
-The reverse proxy is configured on the live server, outside Ding's container. It listens publicly on ports 80/443, obtains or uses the TLS certificate, and forwards requests to Ding's private listener at `127.0.0.1:3000`. These settings do not go in `.env`, `Dockerfile`, or `docker-compose.yml`.
-
-Point the DNS record for `ding.example.com` at the server first and allow inbound TCP ports 80 and 443 through the firewall. Then install one reverse proxy. Caddy is the shortest setup because it obtains and renews Let's Encrypt certificates automatically.
-
-Set `DING_BASE_URL` to the exact public HTTPS address users will open. The server rejects non-HTTPS values in production.
-
-Keep `DING_TRUST_PROXY=false` for the normal same-server setup. This setting tells Ding whether to trust address and protocol headers from another service in front of it; only enable it when that service is trusted. `true` means the local machine, and `loopback`, `linklocal`, and `uniquelocal` are also accepted.
-
-### Caddy
-
-On a Linux server, put this in `/etc/caddy/Caddyfile`:
-
-```caddyfile
-ding.example.com {
-  reverse_proxy localhost:3000
+```text
+updates.example.com {
+  reverse_proxy 127.0.0.1:3000
 }
 ```
 
-Then validate and reload Caddy:
+Replace the hostname, then validate and reload:
 
 ```bash
 sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
+curl --fail https://updates.example.com/health
 ```
 
-If Caddy runs as another Docker Compose service instead of on the host, proxy to `http://ding:3000` on a shared Docker network; `localhost:3000` would refer to the proxy container itself.
+With DNS and ports configured, [Caddy obtains and renews HTTPS certificates](https://caddyserver.com/docs/automatic-https). If a proxy runs in a container on Ding's network, its upstream is `ding:3000`, not `localhost:3000`.
 
-### Nginx
-
-On a Linux server, save this as `/etc/nginx/sites-available/ding`, enable it, test it, and reload Nginx:
+For an existing Nginx deployment, use an HTTPS virtual host with a valid certificate and this location block:
 
 ```nginx
-server {
-  listen 80;
-  server_name ding.example.com;
-
-  location / {
-    proxy_pass http://localhost:3000;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-  }
+location / {
+  proxy_pass http://127.0.0.1:3000;
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $remote_addr;
+  proxy_set_header X-Forwarded-Proto $scheme;
 }
 ```
 
-```bash
-sudo ln -s /etc/nginx/sites-available/ding /etc/nginx/sites-enabled/ding
-sudo nginx -t
-sudo systemctl reload nginx
-```
+This single-proxy example replaces incoming client-address headers. Add the location block to your existing TLS configuration; it is not a complete Nginx/HTTPS installation. See [Nginx HTTPS configuration](https://nginx.org/en/docs/http/configuring_https_servers.html).
 
-Use your certificate manager (for example, Certbot with the Nginx plugin) to add HTTPS for `ding.example.com`, then reload Nginx. On a managed host, use the provider's load balancer or proxy configuration instead; the target remains the private Ding listener.
+Set `DING_BASE_URL` to the exact origin used in the browser. Keep `DING_TRUST_PROXY=false` unless you have configured and verified a trusted proxy boundary. `true` means loopback trust, not trust of every proxy. Docker networking can present a host proxy as a bridge address; do not broaden trust just to remove an error. See [configuration](CONFIGURATION.md#proxy-trust-and-client-addresses).
 
-## 4. Embed the Widget
+## 5. Publish and embed
 
-After the instance is reachable over HTTPS, embed:
+Open `https://updates.example.com`, log in, and follow [publishing your first update](PUBLISHING.md). Visit **Widget setup** for a snippet to add to your app; it generates code but does not verify installation.
 
-```html
-<script
-  src="https://ding.example.com/widget.js"
-  data-position="bottom-right"
-  data-color="#155eef"
-  data-trigger="both"
-  async
-></script>
-```
+Use your app on a separate HTTPS origin to verify the real embed. The Ding admin dashboard does not install the widget into your app automatically. See [framework examples and CSP](EMBEDDING.md).
 
-## 5. Backups
+## 6. Verify the full installation
 
-Ding stores data in SQLite. Back up the persistent Docker volume before upgrades. See [Backup and Restore](BACKUP_AND_RESTORE.md) for tested volume commands and recovery checks.
+- Log in through HTTPS, save a draft and publish an announcement.
+- Confirm `https://updates.example.com/api/announcements` includes the published update and excludes drafts.
+- Load your app, open the widget, expand the update, and check that analytics arrive in the dashboard.
+- Run `docker compose restart ding`; verify the **same announcement**, not just a successful health response.
+- Log out and confirm the dashboard requires login again.
+- [Create a backup and restore it into a separate instance](BACKUP_AND_RESTORE.md).
 
-## 6. Restore
+Keep current backups, monitor disk space, and follow [upgrading](UPGRADING.md) for a new version.
 
-See [Backup and Restore](BACKUP_AND_RESTORE.md). Always stop Ding before replacing a SQLite file and verify `/health` and the dashboard after starting it again.
+## Other deployment options
 
-## 7. Upgrades
+A container platform can run the same image if it supplies a persistent volume at `/app/data`, production environment variables, port `3000`, HTTPS, and a `/health` health check. Set `DING_DB_PATH=/app/data/ding.db`. Use one replica for the embedded SQLite database; do not run several replicas against one database file.
 
-See [Upgrading](UPGRADING.md). Back up the database before applying a new release; migrations run automatically on startup.
+Cloudflare Pages can serve a static website, but Pages/Workers cannot run this Node/SQLite container unchanged. The website URL and your Ding instance URL serve different roles.
 
-## 8. Operational Checks
+The server can also run directly under Node.js after a source build: `node packages/server/dist/index.js`. You then provide a process supervisor, persistent working directory/database, environment, HTTPS proxy and restart policy yourself. Docker is the maintained installation path.
 
-- Confirm `/health` returns `ok`.
-- Confirm the admin dashboard loads.
-- Confirm `/widget.js` returns JavaScript.
-- Confirm the widget appears in a test page.
-- Confirm announcements remain after container restart.
-- Confirm `DING_BASE_URL` matches the public HTTPS origin.
-- Review `docker compose logs ding` if any check fails.
-
-## 9. Troubleshooting
-
-See [Troubleshooting](TROUBLESHOOTING.md) for startup, reverse proxy, login, widget, volume, and migration issues.
+If a step fails, use [troubleshooting](TROUBLESHOOTING.md) before changing the database or deleting volumes.

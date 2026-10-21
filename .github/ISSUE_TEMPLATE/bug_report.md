@@ -18,6 +18,12 @@ assignees: ""
 
 ## Environment
 
-- Ding version:
+- Ding release tag/image digest or source commit:
 - Browser:
 - Deployment method:
+- Operating system and CPU architecture:
+- Docker / Compose versions (if used):
+
+## Relevant logs
+
+Include the first relevant error and the command or docs step that failed. Remove passwords, session cookies, secrets and `.env` contents before posting. Do not attach a production database.

@@ -1,36 +1,39 @@
-# Upgrading Ding
+# Upgrade Ding
 
-> [Ding docs](README.md) · [Deployment](DEPLOYMENT.md) · [Backup and restore](BACKUP_AND_RESTORE.md) · **Upgrading** · [Troubleshooting](TROUBLESHOOTING.md)
+Keep your database volume and configuration while replacing the application. Migrations run when the new version starts. The first supported version is planned as `0.1.0`; an upgrade between supported versions can only be validated once a successor exists. Follow any migration notes in the actual release you install.
 
-Use a tagged release for production deployments when possible. Following `main` directly can include unfinished changes.
+## Before changing versions
 
-An upgrade replaces the Ding container with a newly built one. Your database stays in the `ding-data` volume. Ding runs database updates automatically when the new container starts.
+1. Read the [release notes](https://github.com/UncleTeslim/ding/releases).
+2. [Back up and verify the database](BACKUP_AND_RESTORE.md). Keep `.env` securely and do not rerun setup.
+3. Record your current image tag/digest (or source commit), Compose project/directory name, and database volume.
+4. Keep the previous image available for rollback and allow enough disk space for the backup and new image.
 
-## Before upgrading
+## Published-image installation
 
-1. Read the release notes and any migration notes.
-2. Confirm that you can access the admin credentials and `.env` file.
-3. Create and verify a database backup using [Backup and Restore](BACKUP_AND_RESTORE.md).
-4. Record the current Ding version and Git commit:
+Edit `DING_IMAGE` in `.env` to the new **published** tag or digest. Then:
 
-   ```bash
-   git rev-parse --short HEAD
-   git describe --tags --always
-   ```
+```bash
+docker compose pull ding
+docker compose up -d --no-build --wait
+```
 
-5. Confirm that the Docker host has enough disk space for a new image and a temporary backup.
+Do not add `--build`: it would build the checkout rather than use the release you selected. Keep the same project name and volume.
 
-## Upgrade from a release tag
+## Source-built installation
 
-From the Ding checkout:
+Use a clean checkout, fetch tags, and check out the desired published tag:
 
 ```bash
 git fetch --tags origin
-git checkout <release-tag>
-docker compose up --build -d --wait
+git checkout '<release-tag>'
+docker build -t ding:local .
+docker compose up -d --no-build --wait
 ```
 
-Replace `<release-tag>` with the version you want, such as `v1.2.0`. Migrations run automatically during startup. Check the result:
+Leave `DING_IMAGE` unset for `ding:local`. If you deliberately run development commits, update `main` with `git pull --ff-only origin main` before building and record the resulting commit. Do not mix that path with a pinned release image.
+
+## Verify the result
 
 ```bash
 curl --fail http://127.0.0.1:3000/health
@@ -38,43 +41,19 @@ docker compose ps
 docker compose logs --tail=100 ding
 ```
 
-Then open the dashboard and test the widget from a real host page.
+Open the HTTPS dashboard, check the **same existing announcements and analytics**, and verify the widget from your app. A green health check alone does not establish data persistence or a successful migration.
 
-If you intentionally deploy the latest development code instead of a release, update `main` first:
+## If the upgrade fails
 
-```bash
-git checkout main
-git pull --ff-only origin main
-docker compose up --build -d --wait
-```
-
-## If an upgrade fails
-
-Do not repeatedly restart a failing container before checking the logs:
+Read the first failure in the logs and stop the container if migrations or database errors recur:
 
 ```bash
 docker compose logs --tail=200 ding
+docker compose stop ding
 ```
 
-If the failure is application-only, return to the previous release tag and rebuild. If the new version changed the database and the previous application cannot read it, restore the pre-upgrade database backup before starting the old application.
+If the old application supports the database's current schema, select the recorded old image and run `docker compose up -d --no-build --wait`. For a source installation, check out the previous commit/tag and rebuild first.
 
-```bash
-git checkout <previous-release-tag>
-docker compose down
-docker compose up --build -d --wait
-```
+If schema compatibility is unknown, restore the verified **pre-upgrade** database with the old image before starting it. Do not assume downgrading the image reverses migrations. Test the recovery separately when possible; follow [backup and restore](BACKUP_AND_RESTORE.md).
 
-`docker compose down` removes the container and network but keeps the `ding-data` volume. Never add `-v` here: `docker compose down -v` deletes the database volume.
-
-Database restores are described in [Backup and Restore](BACKUP_AND_RESTORE.md).
-
-## After an upgrade
-
-- Confirm `/health` returns `{ "ok": true, "db": "connected" }`.
-- Confirm the admin dashboard loads and login works.
-- Confirm existing announcements are present.
-- Publish or edit a test announcement if appropriate.
-- Confirm the widget loads from a host page.
-- Check the logs for migration warnings or repeated database errors.
-
-Never use `docker compose down -v` as part of a normal upgrade.
+Never add `-v` to `docker compose down` during an upgrade or rollback: it deletes the database volume.
