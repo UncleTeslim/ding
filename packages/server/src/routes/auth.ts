@@ -6,6 +6,7 @@ import { config, isProduction } from "../config.js";
 import { noStore, requireSameOrigin } from "../middleware/csrf.js";
 import { loginLimiter } from "../middleware/rateLimit.js";
 import { requireAuth } from "../middleware/auth.js";
+import { hashToken, revokeToken } from "../modules/session/repository.js";
 
 const loginSchema = z.object({
   username: z.string().trim().min(1).max(120),
@@ -39,7 +40,20 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
   res.json({ ok: true });
 });
 
-authRouter.post("/logout", (_req, res) => {
+authRouter.post("/logout", (req, res) => {
+  const token = req.cookies?.ding_session;
+  if (token) {
+    try {
+      const payload = jwt.verify(token, config.DING_JWT_SECRET, {
+        algorithms: ["HS256"],
+        audience: "ding-admin",
+        issuer: "ding"
+      }) as { exp: number };
+      revokeToken(hashToken(token), payload.exp);
+    } catch {
+      // Token already invalid — nothing to revoke.
+    }
+  }
   res.clearCookie("ding_session", {
     httpOnly: true,
     secure: isProduction,

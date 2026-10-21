@@ -23,7 +23,6 @@
     "@vitest/coverage-v8": "^4.0.15",
     "autocannon": "^7.15.0",
     "concurrently": "^8.2.2",
-    "gzip-size-cli": "^5.1.0",
     "typescript": "^5.4.5",
     "vite": "^8.0.16",
     "vitest": "^4.1.8"

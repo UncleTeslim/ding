@@ -67,7 +67,7 @@ Sets the `ding_session` HTTP-only cookie.
 
 ### `POST /api/auth/logout`
 
-Clears the `ding_session` cookie.
+Clears the `ding_session` cookie and revokes the JWT server-side, so the token can no longer be used even if replayed.
 
 ## Admin Endpoints
 
@@ -107,3 +107,7 @@ Deletes an announcement and its analytics events.
 ### `GET /api/admin/analytics`
 
 Returns aggregate views, clicks, and CTR.
+
+### `DELETE /api/admin/analytics`
+
+Clears all analytics events. Returns `{ "deleted": <count> }`. Useful for a fresh start; it does not delete announcements.

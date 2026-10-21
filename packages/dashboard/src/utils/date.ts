@@ -18,5 +18,13 @@ export function toPublicationIso(date: string) {
 
 export function formatShortDate(value: string | null) {
   if (!value) return "No date";
-  return shortDateFormatter.format(new Date(value));
+  return shortDateFormatter.format(parseTimestamp(value));
+}
+
+// SQLite datetime('now') is UTC but omits the zone. Do not interpret it as local time.
+export function parseTimestamp(value: string) {
+  const normalized = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)
+    ? `${value.replace(" ", "T")}Z`
+    : value;
+  return new Date(normalized);
 }

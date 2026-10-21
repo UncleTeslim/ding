@@ -3,6 +3,7 @@ import { config } from "../../config.js";
 import type { Announcement } from "../../types.js";
 import { existsPublishedAnnouncement } from "../announcements/repository.js";
 import {
+  deleteAllAnalyticsEvents,
   deleteEventsOlderThan,
   findDailyEventCounts,
   getAnalyticsByAnnouncement,
@@ -58,6 +59,10 @@ export function getPublishedAnnouncementAnalytics(announcements: Announcement[])
 
 export function cleanupOldAnalytics() {
   deleteEventsOlderThan("-12 months");
+}
+
+export function clearAllAnalytics() {
+  return deleteAllAnalyticsEvents();
 }
 
 export function getDailyBreakdown(days = 7): Array<{ date: string; views: number; clicks: number }> {

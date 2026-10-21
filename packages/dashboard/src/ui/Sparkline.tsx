@@ -5,7 +5,7 @@ type SparklineProps = {
   height?: number;
 };
 
-export function Sparkline({ data, color = "var(--primary)", width = 120, height = 36 }: SparklineProps) {
+export function Sparkline({ data, color = "var(--accent)", width = 120, height = 36 }: SparklineProps) {
   if (data.length < 2) return <div style={{ height, width }} />;
 
   const max = Math.max(...data, 1);

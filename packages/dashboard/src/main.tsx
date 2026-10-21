@@ -6,6 +6,7 @@ import { AppShell } from "./ui/AppShell";
 import { Login } from "./pages/Login";
 import { Announcements } from "./pages/Announcements";
 import { AnnouncementEditor } from "./pages/AnnouncementEditor";
+import { WidgetSetup } from "./pages/WidgetSetup";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -16,6 +17,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/login" element={<Login />} />
           <Route element={<AppShell />}>
             <Route path="/" element={<Announcements />} />
+            <Route path="/install" element={<WidgetSetup />} />
             <Route path="/new" element={<AnnouncementEditor mode="new" />} />
             <Route path="/edit/:id" element={<AnnouncementEditor mode="edit" />} />
           </Route>

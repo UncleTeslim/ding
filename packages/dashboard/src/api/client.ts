@@ -61,5 +61,9 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ ids })
     }),
-  dailyAnalytics: () => request<{ daily: DailyPoint[] }>("/api/admin/analytics/daily")
+  dailyAnalytics: () => request<{ daily: DailyPoint[] }>("/api/admin/analytics/daily"),
+  clearAnalytics: () =>
+    request<{ deleted: number }>("/api/admin/analytics", {
+      method: "DELETE"
+    })
 };

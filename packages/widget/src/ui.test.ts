@@ -156,11 +156,61 @@ describe("render", () => {
     expect(root.querySelector(".ding-read-more")).not.toBeNull();
   });
 
-  it("does not render Read more button when body is short", () => {
+it("does not render Read more button when body is short", () => {
     const root = createRoot();
     const store = createStore();
     render(root, config, store, makeState(), actions);
     expect(root.querySelector(".ding-read-more")).toBeNull();
+  });
+
+  it("renders banner with latest title when trigger is banner", () => {
+    const root = createRoot();
+    const store = createStore();
+    render(root, { ...config, trigger: "banner" }, store, makeState(), actions);
+    const banner = root.querySelector(".ding-banner");
+    expect(banner).not.toBeNull();
+    expect(banner?.querySelector(".ding-banner-text")?.textContent).toBe("Test");
+  });
+
+  it("renders banner when trigger is both", () => {
+    const root = createRoot();
+    const store = createStore();
+    render(root, { ...config, trigger: "both" }, store, makeState(), actions);
+    expect(root.querySelector(".ding-banner")).not.toBeNull();
+    expect(root.querySelector(".ding-bell")).not.toBeNull();
+  });
+
+  it("does not render banner when there are no announcements", () => {
+    const root = createRoot();
+    const store = createStore();
+    render(root, { ...config, trigger: "banner" }, store, makeState({ announcements: [] }), actions);
+    expect(root.querySelector(".ding-banner")).toBeNull();
+  });
+
+  it("does not render banner when all announcements are read", () => {
+    const root = createRoot();
+    const store = createStore();
+    store.setReadIds(["a"]);
+    render(root, { ...config, trigger: "banner" }, store, makeState(), actions);
+    expect(root.querySelector(".ding-banner")).toBeNull();
+  });
+
+  it("does not render banner when the latest announcement was dismissed", () => {
+    const root = createRoot();
+    const store = createStore();
+    store.dismissBanner("a");
+    render(root, { ...config, trigger: "banner" }, store, makeState(), actions);
+    expect(root.querySelector(".ding-banner")).toBeNull();
+  });
+
+  it("banner has a dismiss button and calls dismissBanner with latest id", () => {
+    const root = createRoot();
+    const store = createStore();
+    render(root, { ...config, trigger: "banner" }, store, makeState(), actions);
+    const dismiss = root.querySelector("[data-ding-dismiss]");
+    expect(dismiss).not.toBeNull();
+    dismiss?.dispatchEvent(new MouseEvent("click"));
+    expect(actions.dismissBanner).toHaveBeenCalledWith("a");
   });
 });
 

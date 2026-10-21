@@ -17,6 +17,7 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
   const [date, setDate] = useState(toDateInputValue(null));
   const [status, setStatus] = useState<AnnouncementStatus>("draft");
   const [loading, setLoading] = useState(mode === "edit");
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [dirty, setDirty] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -84,6 +85,7 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
 
   async function save(nextStatus: AnnouncementStatus) {
     setError("");
+    setSaving(true);
     try {
       if (mode === "edit" && id) await api.updateAnnouncement(id, payload(nextStatus));
       else await api.createAnnouncement(payload(nextStatus));
@@ -91,6 +93,8 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
       navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save announcement");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -116,7 +120,9 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
         <Link className="ghost link-button" to="/">Back</Link>
       </div>
 
-      {error ? <div className="error">{error}</div> : null}
+      {error ? <div className="error" role="alert">{error}</div> : null}
+
+      <div aria-live="polite" className="sr-only">{saving ? "Saving announcement" : ""}</div>
 
       <form className="editor-grid" onSubmit={submit} onChange={() => setDirty(true)}>
         <div className="form-panel">
@@ -125,19 +131,19 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
             <span>{status === "published" ? "Ready to publish" : "Draft mode"}</span>
           </div>
           <label>
-            Title <span className="counter">{title.length}/100</span>
+            <span>Title <span className="counter">{title.length}/100</span></span>
             <input value={title} maxLength={100} onChange={(event) => setTitle(event.target.value)} required placeholder="Dark mode is here" />
           </label>
 
-          <label>
-            Body <span className={`counter ${body.length > 4500 ? "counter-warn" : ""}`}>{body.length}/5000</span>
-            <div className="md-toolbar">
-              <button type="button" onClick={() => insertMarkdown("**", "**", "bold text")} title="Bold"><strong>B</strong></button>
-              <button type="button" onClick={() => insertMarkdown("*", "*", "italic text")} title="Italic"><em>I</em></button>
-              <button type="button" onClick={() => insertMarkdown("[", "](https://)", "link text")} title="Link">Link</button>
+          <div className="body-field">
+            <label htmlFor="announcement-body"><span>Body <span className={`counter ${body.length > 4500 ? "counter-warn" : ""}`}>{body.length}/5000</span></span></label>
+            <div className="md-toolbar" role="group" aria-label="Markdown formatting">
+              <button type="button" onClick={() => insertMarkdown("**", "**", "bold text")} title="Bold" aria-label="Bold"><strong>B</strong></button>
+              <button type="button" onClick={() => insertMarkdown("*", "*", "italic text")} title="Italic" aria-label="Italic"><em>I</em></button>
+              <button type="button" onClick={() => insertMarkdown("[", "](https://)", "link text")} title="Link" aria-label="Insert link">Link</button>
             </div>
-            <textarea ref={textareaRef} value={body} maxLength={5000} onChange={(event) => setBody(event.target.value)} required rows={15} placeholder="Describe what changed, why it matters, and where users can find it." />
-          </label>
+            <textarea id="announcement-body" ref={textareaRef} value={body} maxLength={5000} onChange={(event) => setBody(event.target.value)} required rows={15} placeholder="Describe what changed, why it matters, and where users can find it." />
+          </div>
 
           <div className="field-row">
             <label>
@@ -168,9 +174,9 @@ export function AnnouncementEditor({ mode }: { mode: "new" | "edit" }) {
           </div>
 
           <div className="form-actions">
-            <button type="button" className="ghost" onClick={() => save("draft")}>Save draft</button>
-            <button type="button" className="primary" onClick={() => save("published")}>Publish</button>
-            <button type="button" className="ghost" onClick={cancel}>Cancel</button>
+            <button type="button" className="ghost" onClick={() => save("draft")} disabled={saving}>Save draft</button>
+            <button type="button" className="primary" onClick={() => save("published")} disabled={saving}>{saving ? "Saving…" : "Publish"}</button>
+            <button type="button" className="ghost" onClick={cancel} disabled={saving}>Cancel</button>
           </div>
         </div>
 

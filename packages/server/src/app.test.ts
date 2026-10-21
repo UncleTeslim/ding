@@ -14,6 +14,7 @@ async function loadFreshApp() {
   process.env.DING_IP_SALT = "test-salt-test-salt";
   process.env.DING_BASE_URL = "http://localhost:3000";
   process.env.DING_TRUST_PROXY = "false";
+  delete process.env.RAILWAY_PUBLIC_DOMAIN;
   process.env.NODE_ENV = "test";
   const appModule = await import("./app.js");
   const storageModule = await import("./bootstrap/storage.js");
@@ -153,6 +154,21 @@ describe("server", () => {
     await agent.get("/api/admin/announcements").expect(401);
   });
 
+  it("revokes the JWT server-side so a replayed cookie is rejected", async () => {
+    const fresh = await loadFreshApp();
+    closeDb = fresh.closeDb;
+    const agent = request.agent(fresh.app);
+    const login = await agent.post("/api/auth/login").send({ username: "admin", password: "password" }).expect(200);
+    const setCookie = (login.headers["set-cookie"] as string[]).find((value) => value.startsWith("ding_session="));
+    expect(setCookie).toBeTruthy();
+    const token = setCookie!.split(";")[0];
+
+    await agent.post("/api/auth/logout").expect(200);
+    const stale = request.agent(fresh.app);
+    stale.jar.setCookie(token, "http://localhost");
+    await stale.get("/api/admin/announcements").expect(401);
+  });
+
   it("returns current user via /me", async () => {
     const fresh = await loadFreshApp();
     closeDb = fresh.closeDb;
@@ -191,6 +207,27 @@ describe("server", () => {
     expect(res.body.summary.total_clicks).toBeGreaterThanOrEqual(1);
     const daily = await agent.get("/api/admin/analytics/daily").expect(200);
     expect(daily.body.daily).toHaveLength(7);
+  });
+
+  it("clears all analytics as admin", async () => {
+    const fresh = await loadFreshApp();
+    closeDb = fresh.closeDb;
+    const agent = request.agent(fresh.app);
+    await agent.post("/api/auth/login").send({ username: "admin", password: "password" }).expect(200);
+    const announcement = fresh.getDb().prepare("SELECT id FROM announcements WHERE status = 'published' LIMIT 1").get() as { id: string };
+    await request(fresh.app).post("/api/analytics/view").send({ announcement_id: announcement.id }).expect(204);
+
+    const cleared = await agent.delete("/api/admin/analytics").expect(200);
+    expect(cleared.body.deleted).toBeGreaterThanOrEqual(1);
+    const res = await agent.get("/api/admin/analytics").expect(200);
+    expect(res.body.summary.total_views).toBe(0);
+    expect(res.body.summary.total_clicks).toBe(0);
+  });
+
+  it("rejects clearing analytics without auth", async () => {
+    const fresh = await loadFreshApp();
+    closeDb = fresh.closeDb;
+    await request(fresh.app).delete("/api/admin/analytics").expect(401);
   });
 
   it("bulk deletes multiple drafts", async () => {
@@ -233,15 +270,69 @@ describe("server", () => {
     expect(row.ip_hash).not.toBe(analytics.hashIp("203.0.113.55"));
   });
 
-  it("deduplicates analytics per IP, announcement, event, and day", async () => {
+  it("uses Railway's validated X-Real-IP for analytics when publicly deployed there", async () => {
     const fresh = await loadFreshApp();
     closeDb = fresh.closeDb;
+    process.env.RAILWAY_PUBLIC_DOMAIN = "ding-rehearsal-production.up.railway.app";
+    const analytics = await import("./modules/analytics/service.js");
     const announcement = fresh.getDb().prepare("SELECT id FROM announcements WHERE status = 'published' LIMIT 1").get() as { id: string };
 
-    await request(fresh.app).post("/api/analytics/view").send({ announcement_id: announcement.id }).expect(204);
-    await request(fresh.app).post("/api/analytics/view").send({ announcement_id: announcement.id }).expect(204);
+    await request(fresh.app)
+      .post("/api/analytics/view")
+      .set("X-Real-IP", "203.0.113.55")
+      .set("X-Forwarded-For", "198.51.100.10")
+      .send({ announcement_id: announcement.id })
+      .expect(204);
 
-    const row = fresh.getDb().prepare("SELECT COUNT(*) as count FROM analytics_events").get() as { count: number };
+    await request(fresh.app)
+      .post("/api/analytics/view")
+      .set("X-Real-IP", "203.0.113.55")
+      .set("X-Forwarded-For", "198.51.100.11")
+      .send({ announcement_id: announcement.id })
+      .expect(204);
+
+    await request(fresh.app)
+      .post("/api/analytics/view")
+      .set("X-Real-IP", "not-an-ip")
+      .send({ announcement_id: announcement.id })
+      .expect(204);
+
+    const hashes = fresh.getDb().prepare("SELECT ip_hash FROM analytics_events WHERE event_type = 'view'").all() as Array<{ ip_hash: string }>;
+    expect(hashes).toHaveLength(2);
+    expect(hashes.map(({ ip_hash }) => ip_hash)).toContain(analytics.hashIp("203.0.113.55"));
+  });
+
+  it("deduplicates analytics per IP, announcement, event within a rolling 24h window", async () => {
+    const fresh = await loadFreshApp();
+    closeDb = fresh.closeDb;
+    const repo = await import("./modules/analytics/repository.js");
+    const announcement = fresh.getDb().prepare("SELECT id FROM announcements WHERE status = 'published' LIMIT 1").get() as { id: string };
+    const ip = "hash-123";
+
+    fresh.getDb()
+      .prepare("INSERT INTO analytics_events (announcement_id, event_type, ip_hash, created_at) VALUES (?, 'view', ?, datetime('now', '-25 hours'))")
+      .run(announcement.id, ip);
+    fresh.getDb()
+      .prepare("INSERT INTO analytics_events (announcement_id, event_type, ip_hash, created_at) VALUES (?, 'view', ?, datetime('now', '-2 minutes'))")
+      .run(announcement.id, ip);
+
+    repo.insertDailyEvent(announcement.id, "view", ip);
+
+    const row = fresh.getDb().prepare("SELECT COUNT(*) as count FROM analytics_events WHERE announcement_id = ? AND event_type = 'view'").get(announcement.id) as { count: number };
+    expect(row.count).toBe(2);
+  });
+
+  it("deduplicates an identical event that falls inside the 24h window", async () => {
+    const fresh = await loadFreshApp();
+    closeDb = fresh.closeDb;
+    const repo = await import("./modules/analytics/repository.js");
+    const announcement = fresh.getDb().prepare("SELECT id FROM announcements WHERE status = 'published' LIMIT 1").get() as { id: string };
+    const ip = "hash-456";
+
+    repo.insertDailyEvent(announcement.id, "view", ip);
+    repo.insertDailyEvent(announcement.id, "view", ip);
+
+    const row = fresh.getDb().prepare("SELECT COUNT(*) as count FROM analytics_events WHERE announcement_id = ? AND event_type = 'view'").get(announcement.id) as { count: number };
     expect(row.count).toBe(1);
   });
 
@@ -298,6 +389,19 @@ describe("server", () => {
       .set("Origin", "https://evil.example")
       .send({ title: "Blocked", body: "Body", tag: "New Feature", status: "published", published_at: null })
       .expect(403);
+  });
+
+  it("allows the Vite dev dashboard origin in non-production", async () => {
+    const fresh = await loadFreshApp();
+    closeDb = fresh.closeDb;
+    const agent = request.agent(fresh.app);
+    await agent.post("/api/auth/login").send({ username: "admin", password: "password" }).expect(200);
+
+    await agent
+      .post("/api/admin/announcements")
+      .set("Origin", "http://localhost:5173")
+      .send({ title: "Dev okay", body: "Body", tag: "New Feature", status: "published", published_at: null })
+      .expect(201);
   });
 
   it("parses DING_TRUST_PROXY=false as disabled", async () => {

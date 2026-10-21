@@ -4,6 +4,8 @@
 
 This guide describes a practical production deployment for Ding. Ding runs as one application container and stores its embedded SQLite database in a persistent Docker volume; no separate database service is required.
 
+For a published, pinned image, follow [Releasing Ding](RELEASING.md) and set `DING_IMAGE` to the exact version before pulling. This guide's default command builds from the checked-out source.
+
 The Docker workflow is the same on Linux, macOS, and Windows with Docker Desktop. For a public production server, a small Linux VPS is the simplest choice. macOS and Windows are useful for local testing; only ordinary shell commands such as `mkdir` and `cp` differ.
 
 ## What you are setting up

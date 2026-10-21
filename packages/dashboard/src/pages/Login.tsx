@@ -30,7 +30,7 @@ export function Login() {
         <Logo size="large" />
         <h1>Ding</h1>
         <p>Manage product updates without sending user data to another platform.</p>
-        {error ? <div className="error">{error}</div> : null}
+        {error ? <div className="error" role="alert">{error}</div> : null}
         <label>
           Username
           <input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" />

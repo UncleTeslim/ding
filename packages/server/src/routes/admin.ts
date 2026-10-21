@@ -12,6 +12,7 @@ import {
 import { createAnnouncementSchema, updateAnnouncementSchema } from "../modules/announcements/schemas.js";
 import {
   addAnalyticsToAnnouncements,
+  clearAllAnalytics,
   getDailyBreakdown,
   getPublishedAnnouncementAnalytics
 } from "../modules/analytics/service.js";
@@ -61,6 +62,11 @@ adminRouter.get("/analytics", (_req, res) => {
 
 adminRouter.get("/analytics/daily", (_req, res) => {
   res.json({ daily: getDailyBreakdown(7) });
+});
+
+adminRouter.delete("/analytics", (_req, res) => {
+  const { changes } = clearAllAnalytics();
+  res.json({ deleted: changes });
 });
 
 adminRouter.post("/announcements/bulk-delete", (req, res) => {

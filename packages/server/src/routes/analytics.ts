@@ -1,6 +1,7 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { z } from "zod";
 import { analyticsLimiter } from "../middleware/rateLimit.js";
+import { getClientAddress } from "../middleware/clientAddress.js";
 import { recordAnalyticsEvent, type AnalyticsEventType } from "../modules/analytics/service.js";
 
 const eventSchema = z.object({
@@ -20,7 +21,7 @@ function validateEvent(req: Request, res: Response, next: NextFunction) {
 
 function handler(eventType: AnalyticsEventType) {
   return (req: AnalyticsRequest, res: Response) => {
-    recordAnalyticsEvent(req.body.announcement_id, eventType, req.ip || "unknown");
+    recordAnalyticsEvent(req.body.announcement_id, eventType, getClientAddress(req));
     res.status(204).send();
   };
 }
