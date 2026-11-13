@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
-    "esbuild": "^0.21.3",
+    "esbuild": "^0.28.2",
     "gzip-size": "^7.0.0",
     "jsdom": "^24.1.0",
     "typescript": "^5.4.5"
