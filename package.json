@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.15",
-    "autocannon": "^7.15.0",
+    "autocannon": "^9.0.0",
     "concurrently": "^8.2.2",
     "typescript": "^5.4.5",
     "vite": "^8.0.16",
