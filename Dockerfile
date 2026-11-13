@@ -1,5 +1,6 @@
-FROM node:20-alpine AS builder
+FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS builder
 WORKDIR /app
+RUN apk add --no-cache python3 make g++
 COPY package*.json ./
 COPY tsconfig.base.json ./
 COPY packages ./packages
@@ -12,7 +13,7 @@ RUN npm ci \
     && rm "$ROLLUP_ARCHIVE"
 RUN npm run build
 
-FROM node:20-alpine AS runner
+FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN apk add --no-cache su-exec
@@ -20,7 +21,12 @@ COPY package*.json ./
 COPY packages/server/package.json ./packages/server/package.json
 COPY packages/widget/package.json ./packages/widget/package.json
 COPY packages/dashboard/package.json ./packages/dashboard/package.json
-RUN npm ci --omit=dev
+RUN apk add --no-cache --virtual .native-build python3 make g++ \
+    && npm ci --omit=dev --workspace @ding/server --include-workspace-root=false \
+    && apk del .native-build
+# The runtime serves prebuilt browser assets and does not need package managers.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
 RUN mkdir -p /app/data && chown -R node:node /app
 COPY --from=builder --chown=node:node /app/packages/server/dist ./packages/server/dist
 COPY --from=builder --chown=node:node /app/packages/server/src/db/migrations ./packages/server/dist/db/migrations

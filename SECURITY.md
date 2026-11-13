@@ -6,7 +6,13 @@ Ding is a single-instance, self-hosted service. Operators control its host, stor
 
 There is no supported stable release yet. `0.1.0` is planned as the first supported version. Until then, fixes target `main`; prereleases are for evaluation and may require updates before production use. Once stable releases exist, consult their release notes for support and migration information.
 
-## Report a vulnerability
+## Security maintenance
+
+Maintainers review dependency alerts, investigate reports, and publish fixes and mitigation guidance. Scheduled CI checks audit the lockfile even when the source has not changed. Automated checks supplement manual review; passing scans do not guarantee that the software has no vulnerabilities.
+
+Once stable versions exist, the latest stable patch is the supported baseline. Operators should watch GitHub Releases and Security Advisories, review upgrade notes, back up the database, and install the published patched version. Ding does not automatically update deployed instances. Operators remain responsible for their host, HTTPS proxy, container runtime and backup security.
+
+## Private reports
 
 Use [GitHub private vulnerability reporting](https://github.com/UncleTeslim/ding/security/advisories/new) when available. If that route is unavailable, open an issue asking for a private reporting channel **without vulnerability details**. Do not post exploit details, credentials or a database publicly.
 

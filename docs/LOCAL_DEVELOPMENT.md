@@ -4,7 +4,7 @@ Try Ding on your computer or change the source without a public domain. Use the 
 
 ## Requirements
 
-- Git, npm, and Node.js **22.12 or newer on the 22.x line**, or a current Node.js 24 release. The current Vite build requires a recent Node runtime; early Node 20/22 releases are insufficient.
+- Git, npm, and the latest patched **Node.js 24 LTS** release. CI and the Docker build use Node 24.
 - A supported native `better-sqlite3` binary, or the compiler tools needed to build it if npm cannot download one.
 
 The Docker build includes its own Node runtime and native build environment; it does not need host Node.

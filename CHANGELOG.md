@@ -7,6 +7,9 @@
 - Reworked the publishing dashboard around reader activity, drafts, search/filtering and widget setup.
 - Updated installation, publishing, framework embedding, API and recovery documentation to match the running product.
 - Included the production setup helper in the Docker image so credentials can be generated without host Node.js; existing `.env` files are protected from overwrite.
+- Moved Docker and CI to Node 24, including native SQLite compilation for Alpine.
+- Updated body-parser and Zod, added scheduled security checks and dependency update PRs, and gated image publication on tests and vulnerability scanning.
+- Added exact-record persistence verification to CI and SBOM/provenance generation to the release workflow.
 
 - Initial Ding self-hosted in-app announcements MVP.
 - Added drafts, tags, Markdown preview, bulk delete, and per-announcement views, clicks, and click-through rates.

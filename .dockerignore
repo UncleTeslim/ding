@@ -9,3 +9,6 @@ packages/*/dist
 coverage
 .DS_Store
 npm-debug.log*
+.launch-rehearsal*/
+.interface-design/
+PLAN.md

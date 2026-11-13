@@ -5,9 +5,9 @@ import { logger } from "./logger.js";
 
 const isProductionEnv = process.env.NODE_ENV === "production";
 
-const requiredInProduction = (name: string, fallback: string) =>
+const requiredInProduction = (_name: string, fallback: string) =>
   isProductionEnv
-    ? z.string({ required_error: `${name} is required in production.` }).trim().min(1)
+    ? z.string().trim().min(1)
     : z.string().trim().min(1).default(fallback);
 
 const trustProxySchema = z.preprocess((value) => {
@@ -25,7 +25,7 @@ const trustProxySchema = z.preprocess((value) => {
 const envSchema = z.object({
   DING_ADMIN_USERNAME: requiredInProduction("DING_ADMIN_USERNAME", "admin"),
   DING_ADMIN_PASSWORD_HASH: isProductionEnv
-    ? z.string({ required_error: "DING_ADMIN_PASSWORD_HASH is required in production." }).min(50)
+    ? z.string().min(50)
     : z.string().min(1).default(() => bcrypt.hashSync("password", 10)),
   DING_JWT_SECRET: requiredInProduction("DING_JWT_SECRET", "development-only-secret-change-me"),
   DING_IP_SALT: requiredInProduction("DING_IP_SALT", "development-only-ip-salt-change-me"),

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Installation help and product questions
+    url: https://github.com/UncleTeslim/ding/discussions
+    about: Ask for help without sharing credentials, database files or private configuration.
+  - name: Report a security vulnerability privately
+    url: https://github.com/UncleTeslim/ding/security/advisories/new
+    about: Keep vulnerability details out of public issues.

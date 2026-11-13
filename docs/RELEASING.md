@@ -10,6 +10,7 @@
 2. Update the root and workspace package versions, changelog, and any migration notes.
 3. Confirm the GitHub Actions workflow has permission to publish packages. Check the GHCR package visibility after the first run and make it public if the release is intended for public pulls.
 4. Merge the release commit to the default branch and ensure CI passes.
+5. Verify the dependency, secret, CodeQL and container checks. Unresolved high or critical findings block publication; scanner errors are failures, not clean results.
 
 ## Publish a version
 
@@ -33,7 +34,7 @@ git tag -a v0.1.0 -m "Ding 0.1.0"
 git push origin v0.1.0
 ```
 
-The tag workflow builds and publishes `ghcr.io/uncleteslim/ding:0.1.0`, then creates a stable GitHub release with generated notes. It accepts stable `vMAJOR.MINOR.PATCH` tags. Do not move or reuse a release tag; cut a new patch version for corrections. Verify the workflow run, release notes, image tag and package visibility on GitHub before announcing the release.
+The tag workflow first runs CI and security checks, builds the candidate and scans that exact image before pushing it. It publishes `ghcr.io/uncleteslim/ding:0.1.0`, attaches an SBOM and provenance attestations to the image, then creates a stable GitHub release with generated notes and the SBOM. It accepts stable `vMAJOR.MINOR.PATCH` tags. Do not move or reuse a release tag; cut a new patch version for corrections. Verify the workflow run, release notes, image digest, attestations and package visibility on GitHub before announcing the release.
 
 The current `0.1.0` package versions are candidates only. A release candidate does not make the stable `0.1.0` release supported.
 

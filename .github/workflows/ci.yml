@@ -1,18 +1,22 @@
 name: CI
 
 on:
+  workflow_call:
   pull_request:
   push:
     branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm audit --audit-level=high
@@ -26,6 +30,7 @@ jobs:
           tar -xzf "$ROLLUP_ARCHIVE" --strip-components=1 -C "node_modules/${ROLLUP_PACKAGE}"
           rm "$ROLLUP_ARCHIVE"
       - run: npm run build
+      - run: npm run typecheck
       - run: npm test
       - run: npm run coverage
       - run: npm run check:size
@@ -33,7 +38,10 @@ jobs:
   docker-smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
       - name: Create production test environment
         shell: bash
         run: |
@@ -54,9 +62,16 @@ jobs:
         run: curl --fail http://127.0.0.1:3000/health
       - name: Verify data survives restart
         run: |
+          node scripts/check-persistence.mjs seed
           docker compose restart ding
-          sleep 3
-          curl --fail http://127.0.0.1:3000/health
+          node scripts/check-persistence.mjs verify
+      - name: Scan the built production image
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
+        with:
+          image-ref: ding:local
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          exit-code: '1'
       - name: Clean up
         if: always()
         run: docker compose down -v
