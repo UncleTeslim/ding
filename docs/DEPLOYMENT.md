@@ -23,7 +23,11 @@ cd ding
 docker pull ghcr.io/uncleteslim/ding:0.1.0-rc.2
 ```
 
+<a id="build-the-current-source"></a>
+
 If you prefer to build from source, clone the revision you want, enter its `ding` folder and run `docker build -t ding:local .` instead of pulling the image. Use `ding:local` as the image name in step 2.
+
+<a id="2-generate-production-configuration"></a>
 
 ## 2. Create your configuration once
 
