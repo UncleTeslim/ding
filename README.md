@@ -24,46 +24,7 @@ The widget loads from your instance with no external fonts, trackers or runtime 
 
 You need Docker with Compose, Git, a persistent disk, and a domain/subdomain with HTTPS. The [production guide](docs/DEPLOYMENT.md) includes DNS, proxy setup, Windows commands and verification.
 
-Build from source (works without a published release):
-
-```bash
-git clone https://github.com/UncleTeslim/ding.git
-cd ding
-docker build -t ding:local .
-```
-
-Generate your credentials inside the image. This Bash command runs as your host user and writes `.env` in the checkout:
-
-```bash
-docker run --rm -it \
-  --user "$(id -u):$(id -g)" \
-  --mount "type=bind,source=$PWD,target=/setup" \
-  --workdir /setup --entrypoint node \
-  ding:local /app/scripts/setup.mjs
-```
-
-Enter an admin username, a strong password and your public origin, such as `https://updates.example.com`. Run setup only for a new installation; it refuses to overwrite an existing `.env`. The current prompt displays typed input, so use a private terminal.
-
-Start Ding:
-
-```bash
-docker compose up -d --no-build --wait
-curl --fail http://127.0.0.1:3000/health
-```
-
-Expected: `{"ok":true,"db":"connected"}`. The port is bound to `127.0.0.1`, and `ding-data` preserves the database when the container is replaced.
-
-Put an HTTPS reverse proxy in front of that listener. For host-installed Caddy, use:
-
-```text
-updates.example.com {
-  reverse_proxy 127.0.0.1:3000
-}
-```
-
-Point DNS at your server and allow ports 80/443 before starting Caddy. See [the complete production guide](docs/DEPLOYMENT.md) for installation links and reload commands. Open your HTTPS origin to log in; production login is not supported over plain HTTP.
-
-When a [versioned release](https://github.com/UncleTeslim/ding/releases) is available, use its published GHCR tag or digest instead of building. The guide explains both paths and does not require a floating `latest` image.
+Follow [Production installation](docs/DEPLOYMENT.md) from the machine that will host Ding. Choose the published image or build from source, then run the setup command for your shell once. It creates the private `.env` file in your checkout. Docker Compose starts the service in the next step. The guide then walks through HTTPS, login and checking the widget in your app.
 
 ## Publish your first update
 

@@ -13,64 +13,45 @@ Use [Docker's installation guide](https://docs.docker.com/engine/install/) and [
 
 The steps below use Bash on the server. Host Node.js is optional: the Docker setup command generates credentials inside the image.
 
-## 1. Get the source and choose an image
+## 1. Get the Docker image and Compose file
 
-```bash
-git clone https://github.com/UncleTeslim/ding.git
+For a fresh evaluation install, run these commands on the machine that will host Ding. This example uses the published release candidate `v0.1.0-rc.2`. The checkout supplies the matching Compose file and the image supplies the compiled application.
+
+```sh
+git clone --branch v0.1.0-rc.2 https://github.com/UncleTeslim/ding.git
 cd ding
+docker pull ghcr.io/uncleteslim/ding:0.1.0-rc.2
 ```
 
-### Build the current source
+If you prefer to build from source, clone the revision you want, enter its `ding` folder and run `docker build -t ding:local .` instead of pulling the image. Use `ding:local` as the image name in step 2.
 
-This path works before a release is published:
+## 2. Create your configuration once
+
+From the `ding` folder, **run one of the following commands**. Pick the shell where you are typing. If you connected to a Linux server from Windows using SSH, use the Linux command on that server. If you are using Docker Desktop directly from PowerShell, use the Windows command.
+
+### Linux or macOS terminal (Bash)
 
 ```bash
-docker build -t ding:local .
+docker run --rm -it --user "$(id -u):$(id -g)" --mount "type=bind,source=$PWD,target=/setup" --workdir /setup --entrypoint node ghcr.io/uncleteslim/ding:0.1.0-rc.2 /app/scripts/setup.mjs
 ```
 
-For repeatable deployments, record `git rev-parse HEAD` or check out the release tag you intend to build. Building a new version does not migrate your running database until you start that version.
-
-### Use a published image
-
-If [GitHub Releases](https://github.com/UncleTeslim/ding/releases) lists an available version, check its image tag and supported architecture, then pull that exact image. Do not assume an example version exists or that ARM images are published.
-
-```bash
-docker pull 'ghcr.io/uncleteslim/ding:<published-version>'
-```
-
-Replace `<published-version>` with the published tag without its leading `v`. For the setup command below, substitute this image for `ding:local`. A digest reference, `ghcr.io/uncleteslim/ding@sha256:<digest>`, also pins an image.
-
-## 2. Generate production configuration
-
-Run setup only for a new installation. It refuses to overwrite `.env`; do not regenerate secrets when upgrading an existing instance.
-
-```bash
-docker run --rm -it \
-  --user "$(id -u):$(id -g)" \
-  --mount "type=bind,source=$PWD,target=/setup" \
-  --workdir /setup --entrypoint node \
-  ding:local /app/scripts/setup.mjs
-```
-
-The command mounts only this checkout as `/setup`. Enter your admin username, a strong password other than `password`, and the **public HTTPS origin**, for example `https://updates.example.com`. Do not include a path such as `/dashboard`. The current password prompt displays typed characters; use a private terminal.
-
-On Windows with Docker Desktop, run this from PowerShell in the checkout:
+### Windows PowerShell
 
 ```powershell
-docker run --rm -it --mount "type=bind,source=${PWD},target=/setup" --workdir /setup --entrypoint node ding:local /app/scripts/setup.mjs
+docker run --rm -it --mount "type=bind,source=${PWD},target=/setup" --workdir /setup --entrypoint node ghcr.io/uncleteslim/ding:0.1.0-rc.2 /app/scripts/setup.mjs
 ```
 
-Alternatively, with Node.js installed, run `npm ci --omit=dev --ignore-scripts` followed by `npm run setup`. This installs the setup helper's dependencies; Docker still builds the running app separately.
+Both commands start a temporary setup container. Enter an admin username, a strong password and the public HTTPS origin where you will open Ding, such as `https://updates.example.com`. Type the password in a private terminal because the prompt displays it.
 
-Setup writes a bcrypt hash, random secrets and production settings to `.env`. Preserve its single quotes: they keep `$` characters in bcrypt hashes literal when Compose reads the file. Keep `.env` private and save a secure copy separately from the server.
+When setup finishes, the container exits and your configuration is in `.env` beside `docker-compose.yml`. The mount gives the helper access to that folder as `/setup`. The Bash command also gives your user ownership of the file. Setup refuses to overwrite an existing configuration. For an existing instance, follow [Upgrading](UPGRADING.md).
 
-For a published image, add this line to `.env`, using the same exact version/digest you pulled:
+**If you pulled the published image**, open the generated `.env` in a text editor and add this line so Compose starts the same image:
 
 ```dotenv
-DING_IMAGE='ghcr.io/uncleteslim/ding:<published-version>'
+DING_IMAGE='ghcr.io/uncleteslim/ding:0.1.0-rc.2'
 ```
 
-For a source build, leave `DING_IMAGE` unset so Compose uses `ding:local`. Leave the container `PORT=3000`; changing the public/host port is separate. See [configuration](CONFIGURATION.md).
+If you built `ding:local`, Compose already uses that name by default. Keep the other generated values and their quotes, back up the file privately, and continue to step 3.
 
 ## 3. Start and check Ding
 
